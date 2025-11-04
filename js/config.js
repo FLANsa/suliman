@@ -8,9 +8,9 @@ const CONFIG = {
     VAT_RATE: 0.15, // 15% VAT rate
     COMPANY_INFO: {
         name: "الذهبي",
-        vatNumber: "1131278742",
+        vatNumber: "7034630488",
         address: "الرياض، المملكة العربية السعودية",
-        phone: "011-0000000"
+        phone: "0599254441"
     },
     STORAGE_KEYS: {
         PHONES: 'phone_store_phones',

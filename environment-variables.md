@@ -20,7 +20,7 @@ APP_DESCRIPTION=نظام إدارة متجر الجوالات
 COMPANY_NAME=الذهبي
 COMPANY_NAME_EN=Aldhahbi
 COMPANY_ADDRESS=الرياض، المملكة العربية السعودية
-COMPANY_PHONE=011-0000000
+COMPANY_PHONE=0599254441
 COMPANY_EMAIL=support@aldhahbi.com
 
 # Database Settings

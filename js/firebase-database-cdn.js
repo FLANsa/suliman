@@ -541,42 +541,142 @@ class FirebaseDatabase {
     try {
       let q = collection(this.db, 'maintenanceJobs');
       
-      // نستخدم استعلام بسيط بدون orderBy لتجنب مشاكل الفهارس
-      if (filters.status) {
-        q = query(q, where('status', '==', filters.status));
-      }
+      // إذا كان هناك status و date range معاً، نحاول الاستعلام معاً أولاً
+      // وإذا فشل بسبب عدم وجود فهرس، نستخدم حل بديل
+      const hasStatusAndDateRange = filters.status && (filters.dateFrom || filters.dateTo);
       
-      if (filters.repId) {
-        q = query(q, where('repId', '==', filters.repId));
-      }
-      
-      if (filters.techId) {
-        q = query(q, where('techId', '==', filters.techId));
-      }
-      
-      if (filters.dateFrom) {
-        q = query(q, where('visitDate', '>=', filters.dateFrom));
-      }
-      
-      if (filters.dateTo) {
-        q = query(q, where('visitDate', '<=', filters.dateTo));
-      }
+      if (hasStatusAndDateRange) {
+        try {
+          // محاولة الاستعلام الكامل مع الفهرس
+          if (filters.status) {
+            q = query(q, where('status', '==', filters.status));
+          }
+          
+          if (filters.repId) {
+            q = query(q, where('repId', '==', filters.repId));
+          }
+          
+          if (filters.techId) {
+            q = query(q, where('techId', '==', filters.techId));
+          }
+          
+          if (filters.dateFrom) {
+            q = query(q, where('visitDate', '>=', filters.dateFrom));
+          }
+          
+          if (filters.dateTo) {
+            q = query(q, where('visitDate', '<=', filters.dateTo));
+          }
 
-      const querySnapshot = await getDocs(q);
-      const jobs = [];
-      querySnapshot.forEach(doc => {
-        jobs.push({ id: doc.id, ...doc.data() });
-      });
-      
-      // ترتيب النتائج يدوياً دائماً
-      jobs.sort((a, b) => {
-        const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
-        const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
-        return dateB - dateA; // ترتيب تنازلي
-      });
-      
-      console.log('✅ Maintenance jobs loaded:', jobs.length);
-      return jobs;
+          const querySnapshot = await getDocs(q);
+          const jobs = [];
+          querySnapshot.forEach(doc => {
+            jobs.push({ id: doc.id, ...doc.data() });
+          });
+          
+          // ترتيب النتائج يدوياً دائماً
+          jobs.sort((a, b) => {
+            const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
+            const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
+            return dateB - dateA; // ترتيب تنازلي
+          });
+          
+          console.log('✅ Maintenance jobs loaded:', jobs.length);
+          return jobs;
+        } catch (indexError) {
+          // إذا فشل بسبب عدم وجود فهرس، نستخدم حل بديل
+          if (indexError.code === 'failed-precondition' || indexError.message.includes('index')) {
+            console.warn('⚠️ Index not ready, using fallback query method');
+            
+            // الحل البديل: جلب جميع الوظائف بالحالة المطلوبة ثم تصفية يدوياً
+            let fallbackQuery = collection(this.db, 'maintenanceJobs');
+            if (filters.status) {
+              fallbackQuery = query(fallbackQuery, where('status', '==', filters.status));
+            }
+            
+            const fallbackSnapshot = await getDocs(fallbackQuery);
+            const allJobs = [];
+            fallbackSnapshot.forEach(doc => {
+              allJobs.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // تصفية يدوياً حسب النطاق الزمني
+            let filteredJobs = allJobs;
+            
+            if (filters.dateFrom) {
+              const dateFrom = filters.dateFrom instanceof Date ? filters.dateFrom : new Date(filters.dateFrom);
+              filteredJobs = filteredJobs.filter(job => {
+                const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
+                return jobDate >= dateFrom;
+              });
+            }
+            
+            if (filters.dateTo) {
+              const dateTo = filters.dateTo instanceof Date ? filters.dateTo : new Date(filters.dateTo);
+              filteredJobs = filteredJobs.filter(job => {
+                const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
+                return jobDate <= dateTo;
+              });
+            }
+            
+            if (filters.repId) {
+              filteredJobs = filteredJobs.filter(job => job.repId === filters.repId);
+            }
+            
+            if (filters.techId) {
+              filteredJobs = filteredJobs.filter(job => job.techId === filters.techId);
+            }
+            
+            // ترتيب النتائج يدوياً
+            filteredJobs.sort((a, b) => {
+              const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
+              const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
+              return dateB - dateA; // ترتيب تنازلي
+            });
+            
+            console.log('✅ Maintenance jobs loaded (fallback method):', filteredJobs.length);
+            return filteredJobs;
+          }
+          throw indexError;
+        }
+      } else {
+        // استعلام عادي بدون فهرس معقد
+        if (filters.status) {
+          q = query(q, where('status', '==', filters.status));
+        }
+        
+        if (filters.repId) {
+          q = query(q, where('repId', '==', filters.repId));
+        }
+        
+        if (filters.techId) {
+          q = query(q, where('techId', '==', filters.techId));
+        }
+        
+        if (filters.dateFrom) {
+          q = query(q, where('visitDate', '>=', filters.dateFrom));
+        }
+        
+        if (filters.dateTo) {
+          q = query(q, where('visitDate', '<=', filters.dateTo));
+        }
+
+        const querySnapshot = await getDocs(q);
+        const jobs = [];
+        querySnapshot.forEach(doc => {
+          jobs.push({ id: doc.id, ...doc.data() });
+        });
+        
+        // ترتيب النتائج يدوياً دائماً
+        jobs.sort((a, b) => {
+          const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
+          const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
+          return dateB - dateA; // ترتيب تنازلي
+        });
+        
+        console.log('✅ Maintenance jobs loaded:', jobs.length);
+        return jobs;
+      }
     } catch (error) {
       console.error('❌ Error getting maintenance jobs:', error);
       throw error;

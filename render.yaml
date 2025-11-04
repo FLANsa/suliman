@@ -17,7 +17,7 @@ services:
       - key: COMPANY_ADDRESS
         value: الرياض، المملكة العربية السعودية
       - key: COMPANY_PHONE
-        value: "011-0000000"
+        value: "0599254441"
       - key: COMPANY_EMAIL
         value: support@aldhahbi.com
       - key: VAT_RATE

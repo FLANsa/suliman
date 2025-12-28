@@ -1,6 +1,6 @@
 /**
  * Local Storage Management
- * الركبي للاتصالات - Phone Store Management System
+ * أسطورة الذهبي - Phone Store Management System
  */
 
 class StorageManager {

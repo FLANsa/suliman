@@ -1,14 +1,14 @@
 /**
  * Configuration and Constants
- * الركبي للاتصالات - Phone Store Management System
+ * أسطورة الذهبي - Phone Store Management System
  */
 
 // VAT Configuration for Saudi Arabia
 const CONFIG = {
     VAT_RATE: 0.15, // 15% VAT rate
     COMPANY_INFO: {
-        name: "الركبي للاتصالات",
-        vatNumber: "7037024846",
+        name: "أسطورة الذهبي",
+        vatNumber: "7034630488",
         address: "الرياض، المملكة العربية السعودية",
         phone: "0599254441"
     },

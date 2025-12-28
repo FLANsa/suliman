@@ -1,4 +1,4 @@
-# JavaScript Architecture - الركبي للاتصالات
+# JavaScript Architecture - أسطورة الذهبي
 
 ## 📁 File Structure
 
@@ -344,5 +344,5 @@ To extend the system:
 
 ---
 
-**الركبي للاتصالات - Phone Store Management System**
+**أسطورة الذهبي - Phone Store Management System**
 *Modular JavaScript Architecture v1.0*

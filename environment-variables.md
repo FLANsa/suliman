@@ -1,4 +1,4 @@
-# Aldhahbi - Environment Variables
+# أسطورة الذهبي - Environment Variables
 # متغيرات البيئة لنظام إدارة متجر الجوالات
 
 # Firebase Configuration
@@ -12,16 +12,16 @@ FIREBASE_MEASUREMENT_ID=G-77EPVYFWPB
 
 # Application Settings
 NODE_ENV=production
-APP_NAME=Aldhahbi
+APP_NAME=Ostora Al-Dhahabi
 APP_VERSION=2.0.0
 APP_DESCRIPTION=نظام إدارة متجر الجوالات
 
 # Company Information
-COMPANY_NAME=الركبي للاتصالات
-COMPANY_NAME_EN=Al-Rakbi for Communications
+COMPANY_NAME=أسطورة الذهبي
+COMPANY_NAME_EN=Ostora Al-Dhahabi
 COMPANY_ADDRESS=الرياض، المملكة العربية السعودية
 COMPANY_PHONE=0599254441
-COMPANY_EMAIL=support@aldhahbi.com
+COMPANY_EMAIL=support@ostora-aldhahabi.com
 
 # Database Settings
 DATABASE_TYPE=firestore

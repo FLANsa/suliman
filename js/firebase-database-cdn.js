@@ -539,28 +539,12 @@ class FirebaseDatabase {
 
   async getMaintenanceJobs(filters = {}) {
     try {
+      // ✅ جلب جميع الأعمال ثم تصفيتها يدوياً لتجنب مشاكل الفهارس
       let q = collection(this.db, 'maintenanceJobs');
       
-      // بناء الاستعلام الأساسي (بدون repId لأنه قد يكون في parts[])
+      // استعلام بسيط بحقل واحد فقط (لا يحتاج فهرس مركب)
       if (filters.status) {
         q = query(q, where('status', '==', filters.status));
-      }
-      
-      // فلترة الفني يمكن عملها مباشرة (techId في المستوى الرئيسي)
-      if (filters.techId) {
-        q = query(q, where('techId', '==', filters.techId));
-      }
-      
-      // محاولة فلترة التواريخ في الاستعلام
-      try {
-        if (filters.dateFrom) {
-          q = query(q, where('visitDate', '>=', filters.dateFrom));
-        }
-        if (filters.dateTo) {
-          q = query(q, where('visitDate', '<=', filters.dateTo));
-        }
-      } catch (indexError) {
-        console.warn('⚠️ Date filtering requires index, will filter manually');
       }
 
       const querySnapshot = await getDocs(q);
@@ -569,7 +553,12 @@ class FirebaseDatabase {
         jobs.push({ id: doc.id, ...doc.data() });
       });
       
-      // تصفية يدوياً حسب التاريخ إذا لزم الأمر
+      // ✅ تصفية يدوياً حسب الفني
+      if (filters.techId) {
+        jobs = jobs.filter(job => job.techId === filters.techId);
+      }
+      
+      // ✅ تصفية يدوياً حسب التاريخ
       if (filters.dateFrom) {
         const dateFrom = filters.dateFrom instanceof Date ? filters.dateFrom : new Date(filters.dateFrom);
         jobs = jobs.filter(job => {

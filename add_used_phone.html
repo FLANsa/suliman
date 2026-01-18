@@ -117,8 +117,8 @@
               </div>
 
               <div class="mb-3">
-                <label for="age" class="form-label">عمر البطارية</label>
-                <input type="number" class="form-control arabic-number-field" id="age" name="age" required min="0" max="100" placeholder="0-100">
+                <label for="age" class="form-label">نسبة البطارية</label>
+                <input type="text" class="form-control" id="age" name="age" required placeholder="مثال: 85% أو جديدة">
               </div>
 
               <h5 class="mt-4 mb-3">معلومات العميل</h5>
@@ -414,16 +414,16 @@
           return false;
         }
 
-        // Validate battery age (0-100)
-        const batteryAge = parseInt(document.getElementById('age').value);
-        if (isNaN(batteryAge) || batteryAge < 0 || batteryAge > 100) {
-          alert('عمر البطارية يجب أن يكون بين 0 و 100');
+        // Validate battery field is not empty
+        const batteryValue = document.getElementById('age').value.trim();
+        if (!batteryValue) {
+          alert('يرجى إدخال نسبة البطارية');
           document.getElementById('age').focus();
           return false;
         }
 
         const phone_number = generatePhoneNumber();
-        const ageMonths = parseInt(document.getElementById('age').value)||0;
+        const batteryLevel = document.getElementById('age').value.trim();
 
         const phoneData = {
           brand: document.getElementById('brand').value,
@@ -436,8 +436,8 @@
           serial_number: document.getElementById('serial_number').value,
           phone_number,
           phone_condition: document.getElementById('phone_condition').value,
-          age: ageMonths,
-          battery_level: String(ageMonths),   // <— يجعل الملصق يعرض نفس القيمة ضمن "نسبة البطارية"
+          age: batteryLevel,
+          battery_level: batteryLevel,   // <— يجعل الملصق يعرض نفس القيمة ضمن "نسبة البطارية"
           description: document.getElementById('description').value,
           customer_name: document.getElementById('customer_name').value,
           customer_id: document.getElementById('customer_id').value,
@@ -512,7 +512,6 @@
     function setupInputValidation() {
       const customerIdInput = document.getElementById('customer_id');
       const customerPhoneInput = document.getElementById('customer_phone');
-      const batteryAgeInput = document.getElementById('age');
       
       // Only allow numbers and limit to 10 digits for ID and phone
       [customerIdInput, customerPhoneInput].forEach(input => {
@@ -535,17 +534,7 @@
         });
       });
 
-      // Battery age validation (0-100)
-      batteryAgeInput.addEventListener('input', function(e) {
-        let value = parseInt(e.target.value);
-        if (isNaN(value)) {
-          e.target.value = '';
-        } else if (value < 0) {
-          e.target.value = '0';
-        } else if (value > 100) {
-          e.target.value = '100';
-        }
-      });
+      // Battery field - no validation needed, accepts any text
     }
 
     // ===== تحميل بيانات الهاتف للتعديل =====

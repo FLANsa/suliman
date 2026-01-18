@@ -172,10 +172,9 @@
                   </div>
                 </div>
                 <div class="col-md-4" id="batteryAgeField" style="display: none;">
-                  <label for="battery_age" class="form-label">عمر البطارية</label>
+                  <label for="battery_age" class="form-label">نسبة البطارية</label>
                   <div class="input-group">
-                    <input type="number" class="form-control" id="battery_age" min="0" max="100">
-                    <span class="input-group-text">%</span>
+                    <input type="text" class="form-control" id="battery_age" placeholder="مثال: 85% أو جديدة">
                   </div>
                 </div>
               </div>
@@ -386,9 +385,9 @@
 
         const condition = document.getElementById('condition').value;
         if (condition === 'used') {
-          const batteryAge = parseInt(document.getElementById('battery_age').value);
-          if (isNaN(batteryAge) || batteryAge < 0 || batteryAge > 100) {
-            showAlert('warning', 'عمر البطارية يجب أن يكون بين 0 و 100');
+          const batteryValue = document.getElementById('battery_age').value.trim();
+          if (!batteryValue) {
+            showAlert('warning', 'يرجى إدخال نسبة البطارية');
             document.getElementById('battery_age').focus();
             return false;
           }
@@ -418,11 +417,11 @@
           updatedAt: new Date().toISOString()
         };
 
-        // إضافة عمر البطارية للهواتف المستعملة
+        // إضافة نسبة البطارية للهواتف المستعملة
         if (condition === 'used') {
-          const batteryAge = parseInt(document.getElementById('battery_age').value) || 0;
-          updatedPhoneData.age = batteryAge;
-          updatedPhoneData.battery_level = String(batteryAge);
+          const batteryValue = document.getElementById('battery_age').value.trim();
+          updatedPhoneData.age = batteryValue;
+          updatedPhoneData.battery_level = batteryValue;
         } else {
           updatedPhoneData.age = null;
           updatedPhoneData.battery_level = '100';

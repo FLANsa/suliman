@@ -539,63 +539,168 @@ class FirebaseDatabase {
 
   async getMaintenanceJobs(filters = {}) {
     try {
-      // ✅ جلب جميع الأعمال ثم تصفيتها يدوياً لتجنب مشاكل الفهارس
       let q = collection(this.db, 'maintenanceJobs');
       
-      // استعلام بسيط بحقل واحد فقط (لا يحتاج فهرس مركب)
-      if (filters.status) {
-        q = query(q, where('status', '==', filters.status));
-      }
-
-      const querySnapshot = await getDocs(q);
-      let jobs = [];
-      querySnapshot.forEach(doc => {
-        jobs.push({ id: doc.id, ...doc.data() });
-      });
+      // إذا كان هناك status و date range معاً، نحاول الاستعلام معاً أولاً
+      // وإذا فشل بسبب عدم وجود فهرس، نستخدم حل بديل
+      const hasStatusAndDateRange = filters.status && (filters.dateFrom || filters.dateTo);
       
-      // ✅ تصفية يدوياً حسب الفني
-      if (filters.techId) {
-        jobs = jobs.filter(job => job.techId === filters.techId);
-      }
-      
-      // ✅ تصفية يدوياً حسب التاريخ
-      if (filters.dateFrom) {
-        const dateFrom = filters.dateFrom instanceof Date ? filters.dateFrom : new Date(filters.dateFrom);
-        jobs = jobs.filter(job => {
-          const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
-          return jobDate >= dateFrom;
-        });
-      }
-      
-      if (filters.dateTo) {
-        const dateTo = filters.dateTo instanceof Date ? filters.dateTo : new Date(filters.dateTo);
-        jobs = jobs.filter(job => {
-          const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
-          return jobDate <= dateTo;
-        });
-      }
-      
-      // ✅ فلترة المندوب: تدعم البنية الجديدة (parts[]) والقديمة (repId مباشر)
-      if (filters.repId) {
-        jobs = jobs.filter(job => {
-          // البنية الجديدة: البحث في parts[]
-          if (job.parts && Array.isArray(job.parts) && job.parts.length > 0) {
-            return job.parts.some(part => part.repId === filters.repId);
+      if (hasStatusAndDateRange) {
+        try {
+          // محاولة الاستعلام الكامل مع الفهرس
+          // ملاحظة: لا نستخدم repId في Firebase query لأن البحث يجب أن يشمل parts[]
+          if (filters.status) {
+            q = query(q, where('status', '==', filters.status));
           }
-          // البنية القديمة: repId مباشر
-          return job.repId === filters.repId;
+          
+          if (filters.techId) {
+            q = query(q, where('techId', '==', filters.techId));
+          }
+          
+          if (filters.dateFrom) {
+            q = query(q, where('visitDate', '>=', filters.dateFrom));
+          }
+          
+          if (filters.dateTo) {
+            q = query(q, where('visitDate', '<=', filters.dateTo));
+          }
+
+          const querySnapshot = await getDocs(q);
+          let jobs = [];
+          querySnapshot.forEach(doc => {
+            jobs.push({ id: doc.id, ...doc.data() });
+          });
+          
+          // فلترة المندوب يدوياً (للبحث في parts[] أيضاً)
+          if (filters.repId) {
+            jobs = jobs.filter(job => {
+              if (job.repId === filters.repId) return true;
+              if (job.parts && Array.isArray(job.parts)) {
+                return job.parts.some(part => part.repId === filters.repId);
+              }
+              return false;
+            });
+          }
+          
+          // ترتيب النتائج يدوياً دائماً
+          jobs.sort((a, b) => {
+            const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
+            const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
+            return dateB - dateA; // ترتيب تنازلي
+          });
+          
+          console.log('✅ Maintenance jobs loaded:', jobs.length);
+          return jobs;
+        } catch (indexError) {
+          // إذا فشل بسبب عدم وجود فهرس، نستخدم حل بديل
+          if (indexError.code === 'failed-precondition' || indexError.message.includes('index')) {
+            console.warn('⚠️ Index not ready, using fallback query method');
+            
+            // الحل البديل: جلب جميع الوظائف بالحالة المطلوبة ثم تصفية يدوياً
+            let fallbackQuery = collection(this.db, 'maintenanceJobs');
+            if (filters.status) {
+              fallbackQuery = query(fallbackQuery, where('status', '==', filters.status));
+            }
+            
+            const fallbackSnapshot = await getDocs(fallbackQuery);
+            const allJobs = [];
+            fallbackSnapshot.forEach(doc => {
+              allJobs.push({ id: doc.id, ...doc.data() });
+            });
+            
+            // تصفية يدوياً حسب النطاق الزمني
+            let filteredJobs = allJobs;
+            
+            if (filters.dateFrom) {
+              const dateFrom = filters.dateFrom instanceof Date ? filters.dateFrom : new Date(filters.dateFrom);
+              filteredJobs = filteredJobs.filter(job => {
+                const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
+                return jobDate >= dateFrom;
+              });
+            }
+            
+            if (filters.dateTo) {
+              const dateTo = filters.dateTo instanceof Date ? filters.dateTo : new Date(filters.dateTo);
+              filteredJobs = filteredJobs.filter(job => {
+                const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
+                return jobDate <= dateTo;
+              });
+            }
+            
+            if (filters.repId) {
+              filteredJobs = filteredJobs.filter(job => {
+                // البحث في الهيكل القديم (repId)
+                if (job.repId === filters.repId) return true;
+                // البحث في الهيكل الجديد (parts[].repId)
+                if (job.parts && Array.isArray(job.parts)) {
+                  return job.parts.some(part => part.repId === filters.repId);
+                }
+                return false;
+              });
+            }
+            
+            if (filters.techId) {
+              filteredJobs = filteredJobs.filter(job => job.techId === filters.techId);
+            }
+            
+            // ترتيب النتائج يدوياً
+            filteredJobs.sort((a, b) => {
+              const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
+              const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
+              return dateB - dateA; // ترتيب تنازلي
+            });
+            
+            console.log('✅ Maintenance jobs loaded (fallback method):', filteredJobs.length);
+            return filteredJobs;
+          }
+          throw indexError;
+        }
+      } else {
+        // استعلام عادي بدون فهرس معقد
+        // ملاحظة: لا نستخدم repId في Firebase query لأن البحث يجب أن يشمل parts[]
+        if (filters.status) {
+          q = query(q, where('status', '==', filters.status));
+        }
+        
+        if (filters.techId) {
+          q = query(q, where('techId', '==', filters.techId));
+        }
+        
+        if (filters.dateFrom) {
+          q = query(q, where('visitDate', '>=', filters.dateFrom));
+        }
+        
+        if (filters.dateTo) {
+          q = query(q, where('visitDate', '<=', filters.dateTo));
+        }
+
+        const querySnapshot = await getDocs(q);
+        let jobs = [];
+        querySnapshot.forEach(doc => {
+          jobs.push({ id: doc.id, ...doc.data() });
         });
+        
+        // فلترة المندوب يدوياً (للبحث في parts[] أيضاً)
+        if (filters.repId) {
+          jobs = jobs.filter(job => {
+            if (job.repId === filters.repId) return true;
+            if (job.parts && Array.isArray(job.parts)) {
+              return job.parts.some(part => part.repId === filters.repId);
+            }
+            return false;
+          });
+        }
+        
+        // ترتيب النتائج يدوياً دائماً
+        jobs.sort((a, b) => {
+          const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
+          const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
+          return dateB - dateA; // ترتيب تنازلي
+        });
+        
+        console.log('✅ Maintenance jobs loaded:', jobs.length);
+        return jobs;
       }
-      
-      // ترتيب النتائج يدوياً دائماً
-      jobs.sort((a, b) => {
-        const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
-        const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
-        return dateB - dateA; // ترتيب تنازلي
-      });
-      
-      console.log('✅ Maintenance jobs loaded:', jobs.length);
-      return jobs;
     } catch (error) {
       console.error('❌ Error getting maintenance jobs:', error);
       throw error;
@@ -818,75 +923,102 @@ class FirebaseDatabase {
   }
 
   // ===== تقارير التسويات =====
-  async getRepSettlements(dateFrom, dateTo) {
+  async getRepSettlements(dateFrom, dateTo, statusFilter = null) {
     try {
-      console.log('🔍 Getting rep settlements from', dateFrom, 'to', dateTo);
+      console.log('🔍 Getting rep settlements from', dateFrom, 'to', dateTo, 'status:', statusFilter);
       
-      const jobs = await this.getMaintenanceJobs({
-        status: 'done',
+      // إذا لم يتم تحديد فلتر الحالة، جلب جميع العمليات المكتملة
+      const filters = {
         dateFrom,
         dateTo
-      });
+      };
+      if (statusFilter) {
+        filters.status = statusFilter;
+      }
+      
+      const jobs = await this.getMaintenanceJobs(filters);
 
       console.log('📊 Found jobs for rep settlements:', jobs.length);
 
       const repTotals = {};
       
       jobs.forEach(job => {
-        // ✅ دعم البنية الجديدة (parts array) والقديمة (repId مباشر)
+        // التعامل مع الهيكل الجديد (parts[]) - كل قطعة لها مندوب
         if (job.parts && Array.isArray(job.parts) && job.parts.length > 0) {
-          // البنية الجديدة: كل قطعة لها مندوب خاص
           job.parts.forEach(part => {
-            if (!part.repId) return;
+            if (!part.repId) return; // تجاهل القطع بدون مندوب
             
             if (!repTotals[part.repId]) {
               repTotals[part.repId] = {
                 repId: part.repId,
                 repName: part.repName || 'غير محدد',
                 jobsCount: 0,
+                partsCount: 0,
                 partCostSum: 0,
                 profitSum: 0,
                 techCommissionSum: 0,
                 shopProfitSum: 0,
-                revenueSum: 0
+                revenueSum: 0,
+                jobs: [] // لتتبع الأعمال التفصيلية
               };
             }
             
-            // نضيف تكلفة القطعة فقط (لأن كل قطعة لها مندوب)
+            // إضافة تفاصيل القطعة
+            repTotals[part.repId].partsCount++;
             repTotals[part.repId].partCostSum += (Number(part.partCost) || 0);
+            
+            // إضافة تفاصيل العمل لكل قطعة
+            repTotals[part.repId].jobs.push({
+              jobId: job.id,
+              jobDate: job.dateCreated || job.createdAt,
+              customerName: job.customerName,
+              deviceModel: job.deviceModel,
+              partName: part.partName,
+              partCost: Number(part.partCost) || 0
+            });
           });
           
-          // نحسب عدد الأعمال والإيرادات مرة واحدة لكل عمل
-          // نستخدم أول مندوب في القائمة لتخصيص إحصائيات العمل
-          const firstRepId = job.parts[0]?.repId;
-          if (firstRepId && repTotals[firstRepId]) {
-            repTotals[firstRepId].jobsCount++;
-            repTotals[firstRepId].profitSum += (job.profit || 0);
-            repTotals[firstRepId].techCommissionSum += (job.techCommission || 0);
-            repTotals[firstRepId].shopProfitSum += (job.shopProfit || 0);
-            repTotals[firstRepId].revenueSum += (job.amountCharged || 0);
-          }
-        } else if (job.repId) {
-          // البنية القديمة: مندوب واحد للعمل كامل
+          // عد العمل مرة واحدة لكل مندوب فريد في هذه العملية
+          const uniqueReps = [...new Set(job.parts.map(p => p.repId).filter(id => id))];
+          uniqueReps.forEach(repId => {
+            if (repTotals[repId]) {
+              repTotals[repId].jobsCount++;
+            }
+          });
+        } 
+        // التعامل مع الهيكل القديم (repId واحد)
+        else if (job.repId) {
           if (!repTotals[job.repId]) {
             repTotals[job.repId] = {
               repId: job.repId,
               repName: job.repName || 'غير محدد',
               jobsCount: 0,
+              partsCount: 0,
               partCostSum: 0,
               profitSum: 0,
               techCommissionSum: 0,
               shopProfitSum: 0,
-              revenueSum: 0
+              revenueSum: 0,
+              jobs: []
             };
           }
           
           repTotals[job.repId].jobsCount++;
-          repTotals[job.repId].partCostSum += (job.partCost || 0);
+          repTotals[job.repId].partsCount++;
+          repTotals[job.repId].partCostSum += (Number(job.partCost) || Number(job.totalPartCost) || 0);
           repTotals[job.repId].profitSum += (job.profit || 0);
           repTotals[job.repId].techCommissionSum += (job.techCommission || 0);
           repTotals[job.repId].shopProfitSum += (job.shopProfit || 0);
           repTotals[job.repId].revenueSum += (job.amountCharged || 0);
+          
+          repTotals[job.repId].jobs.push({
+            jobId: job.id,
+            jobDate: job.dateCreated || job.createdAt,
+            customerName: job.customerName,
+            deviceModel: job.deviceModel,
+            partName: job.partName || 'قطعة',
+            partCost: Number(job.partCost) || 0
+          });
         }
       });
 
@@ -899,15 +1031,20 @@ class FirebaseDatabase {
     }
   }
 
-  async getTechSettlements(dateFrom, dateTo) {
+  async getTechSettlements(dateFrom, dateTo, statusFilter = null) {
     try {
-      console.log('🔍 Getting tech settlements from', dateFrom, 'to', dateTo);
+      console.log('🔍 Getting tech settlements from', dateFrom, 'to', dateTo, 'status:', statusFilter);
       
-      const jobs = await this.getMaintenanceJobs({
-        status: 'done',
+      // إذا لم يتم تحديد فلتر الحالة، جلب جميع العمليات
+      const filters = {
         dateFrom,
         dateTo
-      });
+      };
+      if (statusFilter) {
+        filters.status = statusFilter;
+      }
+      
+      const jobs = await this.getMaintenanceJobs(filters);
 
       console.log('📊 Found jobs for tech settlements:', jobs.length);
 

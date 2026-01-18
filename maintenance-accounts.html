@@ -498,16 +498,25 @@
                 toDate.setHours(23, 59, 59, 999);
 
                 console.log('🔄 Loading accounts data...');
-                console.log('📅 Date range:', fromDate, 'to', toDate);
+                console.log('📅 Date range:', fromDate, 'to', toDate, 'Status filter:', statusFilter);
 
-                // Load reps accounts
+                // تحويل فلتر الحالة إلى القيمة المناسبة لـ Firebase
+                let statusForQuery = null;
+                if (statusFilter === 'pending') {
+                    statusForQuery = null; // جلب جميع العمليات ثم فلترة لاحقاً
+                } else if (statusFilter === 'paid') {
+                    statusForQuery = null; // جلب جميع العمليات ثم فلترة لاحقاً
+                }
+                // إذا كان "جميع الحالات" - جلب جميع العمليات
+
+                // Load reps accounts - جلب جميع العمليات بدون فلتر الحالة
                 console.log('📊 Loading reps settlements...');
-                repsAccounts = await window.firebaseDatabase.getRepSettlements(fromDate, toDate);
+                repsAccounts = await window.firebaseDatabase.getRepSettlements(fromDate, toDate, null);
                 console.log('✅ Reps loaded:', repsAccounts.length);
                 
-                // Load techs accounts
+                // Load techs accounts - جلب جميع العمليات بدون فلتر الحالة
                 console.log('📊 Loading techs settlements...');
-                techsAccounts = await window.firebaseDatabase.getTechSettlements(fromDate, toDate);
+                techsAccounts = await window.firebaseDatabase.getTechSettlements(fromDate, toDate, null);
                 console.log('✅ Techs loaded:', techsAccounts.length);
                 
                 // Load payments

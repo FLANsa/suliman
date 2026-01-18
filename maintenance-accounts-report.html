@@ -343,7 +343,8 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             parseFilters();
-            setTimeout(loadReportData, 1000);
+            // انتظار قصير لتحميل Firebase (أقل من قبل)
+            setTimeout(loadReportData, 600);
         });
 
         function parseFilters() {
@@ -372,11 +373,11 @@
                 const toDate = new Date(filters.dateTo);
                 toDate.setHours(23, 59, 59, 999);
 
+                // جلب جميع العمليات (بدون فلتر status) لتشمل قيد الصيانة والمكتملة
                 [repsData, techniciansData, jobsData, paymentsData] = await Promise.all([
                     window.firebaseDatabase.getReps(),
                     window.firebaseDatabase.getTechnicians(),
                     window.firebaseDatabase.getMaintenanceJobs({
-                        status: 'done',
                         dateFrom: fromDate,
                         dateTo: toDate
                     }),
@@ -674,98 +675,71 @@
         // ==================== COMMON ====================
         function displaySections(accounts, type) {
             const container = document.getElementById('sections');
-            container.innerHTML = '';
             
             const isRep = type === 'rep';
             const itemLabel = isRep ? 'اسم القطعة' : 'العملية';
             const costLabel = isRep ? 'تكلفة القطعة' : 'العمولة';
             
+            // استخدام innerHTML مباشرة لتحسين الأداء
+            let allHTML = '';
+            
             accounts.forEach((account, index) => {
-                const section = document.createElement('div');
-                section.className = 'section';
-                
                 const statusText = account.status === 'paid' ? 'مدفوع' : 'معلق';
                 const statusClass = account.status === 'paid' ? 'status-paid' : 'status-pending';
-                
-                let html = `
-                    <div class="section-header">
-                        <h2>${accounts.length > 1 ? (index + 1) + '. ' : ''}${account.name}</h2>
-                        <span class="status ${statusClass}">${statusText}</span>
-                    </div>
-                `;
-                
-                if (account.phone) {
-                    html += `<p class="contact-info">${account.phone}</p>`;
-                }
-                
-                html += `
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>التاريخ</th>
-                                <th>العميل</th>
-                                <th>الجهاز</th>
-                                <th>${itemLabel}</th>
-                                <th>${costLabel}</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
-                
-                account.items.forEach((item, itemIndex) => {
-                    html += `
-                        <tr>
-                            <td>${itemIndex + 1}</td>
-                            <td>${item.date}</td>
-                            <td>${item.customerName}</td>
-                            <td>${item.deviceModel}</td>
-                            <td>${item.name}</td>
-                            <td>${item.cost.toFixed(2)} ريال</td>
-                        </tr>
-                    `;
-                });
-                
-                html += `
-                        </tbody>
-                    </table>
-                `;
-                
                 const balanceClass = account.balance <= 0 ? 'balance paid' : 'balance';
                 const countLabel = isRep ? 'عدد القطع' : 'عدد الأعمال';
                 const totalLabel = isRep ? 'إجمالي التكلفة' : 'إجمالي العمولات';
                 
-                html += `
-                    <div class="summary-box">
-                        <div class="summary-item">
-                            <div class="label">${countLabel}</div>
-                            <div class="value">${account.items.length}</div>
+                // بناء صفوف الجدول
+                let tableRows = '';
+                account.items.forEach((item, itemIndex) => {
+                    tableRows += `<tr><td>${itemIndex + 1}</td><td>${item.date}</td><td>${item.customerName}</td><td>${item.deviceModel}</td><td>${item.name}</td><td>${item.cost.toFixed(2)} ريال</td></tr>`;
+                });
+                
+                allHTML += `
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>${accounts.length > 1 ? (index + 1) + '. ' : ''}${account.name}</h2>
+                            <span class="status ${statusClass}">${statusText}</span>
                         </div>
-                        <div class="summary-item">
-                            <div class="label">${totalLabel}</div>
-                            <div class="value">${account.totalAmount.toFixed(2)} ريال</div>
-                        </div>
-                        <div class="summary-item">
-                            <div class="label">المدفوع</div>
-                            <div class="value">${account.totalPaid.toFixed(2)} ريال</div>
-                        </div>
-                        <div class="summary-item ${balanceClass}">
-                            <div class="label">المتبقي</div>
-                            <div class="value">${account.balance.toFixed(2)} ريال</div>
+                        ${account.phone ? `<p class="contact-info">${account.phone}</p>` : ''}
+                        <table class="data-table">
+                            <thead>
+                                <tr><th>#</th><th>التاريخ</th><th>العميل</th><th>الجهاز</th><th>${itemLabel}</th><th>${costLabel}</th></tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                        <div class="summary-box">
+                            <div class="summary-item"><div class="label">${countLabel}</div><div class="value">${account.items.length}</div></div>
+                            <div class="summary-item"><div class="label">${totalLabel}</div><div class="value">${account.totalAmount.toFixed(2)} ريال</div></div>
+                            <div class="summary-item"><div class="label">المدفوع</div><div class="value">${account.totalPaid.toFixed(2)} ريال</div></div>
+                            <div class="summary-item ${balanceClass}"><div class="label">المتبقي</div><div class="value">${account.balance.toFixed(2)} ريال</div></div>
                         </div>
                     </div>
                 `;
-                
-                section.innerHTML = html;
-                container.appendChild(section);
             });
+            
+            // كتابة كل الـ HTML مرة واحدة (أسرع بكثير)
+            container.innerHTML = allHTML;
         }
 
+        // Cache للتواريخ لتحسين الأداء
+        const dateCache = new Map();
+        
         function formatDate(date) {
             if (!date) return '-';
             try {
-                const d = date.seconds ? new Date(date.seconds * 1000) : new Date(date);
-                return d.toLocaleDateString('ar-SA');
+                const timestamp = date.seconds ? date.seconds * 1000 : new Date(date).getTime();
+                
+                // استخدام الكاش لتجنب التحويل المتكرر
+                if (dateCache.has(timestamp)) {
+                    return dateCache.get(timestamp);
+                }
+                
+                const d = new Date(timestamp);
+                const formatted = d.toLocaleDateString('ar-SA');
+                dateCache.set(timestamp, formatted);
+                return formatted;
             } catch (e) {
                 return '-';
             }

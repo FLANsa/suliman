@@ -497,23 +497,23 @@
 
             // Add reps to filter dropdown only (no longer in form)
             if (filterRepSelect) {
-                repsData.forEach(rep => {
-                    if (rep.active) {
-                        const option = document.createElement('option');
-                        option.value = rep.id;
-                        option.textContent = rep.name;
-                        filterRepSelect.appendChild(option);
-                    }
-                });
+            repsData.forEach(rep => {
+                if (rep.active) {
+                    const option = document.createElement('option');
+                    option.value = rep.id;
+                    option.textContent = rep.name;
+                    filterRepSelect.appendChild(option);
+                }
+            });
             }
 
             // Add technicians to both form and filter dropdowns
             if (techSelect) {
-                techniciansData.forEach(tech => {
-                    if (tech.active) {
-                        const option = document.createElement('option');
-                        option.value = tech.id;
-                        option.textContent = tech.name;
+            techniciansData.forEach(tech => {
+                if (tech.active) {
+                    const option = document.createElement('option');
+                    option.value = tech.id;
+                    option.textContent = tech.name;
                         techSelect.appendChild(option);
                     }
                 });
@@ -525,9 +525,9 @@
                         const option = document.createElement('option');
                         option.value = tech.id;
                         option.textContent = tech.name;
-                        filterTechSelect.appendChild(option);
-                    }
-                });
+                    filterTechSelect.appendChild(option);
+                }
+            });
             }
         }
 
@@ -537,30 +537,30 @@
             const amountChargedField = document.getElementById('amountCharged');
             if (amountChargedField) {
                 amountChargedField.addEventListener('input', calculateProfit);
-            }
+                }
 
             // Tech selection listener
             const techSelect = document.getElementById('techId');
             if (techSelect) {
                 techSelect.addEventListener('change', function() {
-                    const selectedTech = techniciansData.find(tech => tech.id === this.value);
-                    if (selectedTech) {
-                        selectedTechPercent = selectedTech.defaultCommissionPercent;
+                const selectedTech = techniciansData.find(tech => tech.id === this.value);
+                if (selectedTech) {
+                    selectedTechPercent = selectedTech.defaultCommissionPercent;
                         const techPercentDisplay = document.getElementById('techPercentDisplay');
                         if (techPercentDisplay) {
                             techPercentDisplay.textContent = 
-                                `نسبة العمولة: ${(selectedTechPercent * 100).toFixed(1)}%`;
+                        `نسبة العمولة: ${(selectedTechPercent * 100).toFixed(1)}%`;
                         }
-                        calculateProfit();
-                    } else {
-                        selectedTechPercent = 0; // Default
+                    calculateProfit();
+                } else {
+                    selectedTechPercent = 0; // Default
                         const techPercentDisplay = document.getElementById('techPercentDisplay');
                         if (techPercentDisplay) {
                             techPercentDisplay.textContent = 
-                                'سيتم تحديدها تلقائياً عند اختيار الفني';
+                        'سيتم تحديدها تلقائياً عند اختيار الفني';
                         }
-                    }
-                });
+                }
+            });
             }
         }
 
@@ -632,6 +632,13 @@
                         totalPartCost = 0;
                     }
                     
+                    // ✅ إعادة حساب الأرباح بناءً على totalPartCost الفعلي (لإصلاح البيانات القديمة)
+                    const amountCharged = Number(job.amountCharged) || 0;
+                    const techPercent = job.techPercent || 0;
+                    const calculatedProfit = amountCharged - totalPartCost;
+                    const calculatedTechCommission = Math.max(0, calculatedProfit * techPercent);
+                    const calculatedShopProfit = calculatedProfit - calculatedTechCommission;
+                    
                     // معالجة التاريخ
                     let visitDateStr = '-';
                     if (job.visitDate) {
@@ -648,36 +655,36 @@
                         }
                     }
                     
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
+                const row = document.createElement('tr');
+                row.innerHTML = `
                         <td>${visitDateStr}</td>
                         <td>${job.customerName || '-'}</td>
                         <td>${repsDisplay}</td>
-                        <td>${job.techName || '-'}</td>
+                    <td>${job.techName || '-'}</td>
                         <td>${partsDisplay}</td>
                         <td>${totalPartCost.toFixed(2)} ريال</td>
-                        <td>${job.amountCharged ? Number(job.amountCharged).toFixed(2) : '0.00'} ريال</td>
-                        <td>${job.profit ? Number(job.profit).toFixed(2) : '0.00'} ريال</td>
-                        <td>${job.techCommission ? Number(job.techCommission).toFixed(2) : '0.00'} ريال</td>
-                        <td>${job.shopProfit ? Number(job.shopProfit).toFixed(2) : '0.00'} ريال</td>
-                        <td>
+                        <td>${amountCharged.toFixed(2)} ريال</td>
+                        <td>${calculatedProfit.toFixed(2)} ريال</td>
+                        <td>${calculatedTechCommission.toFixed(2)} ريال</td>
+                        <td>${calculatedShopProfit.toFixed(2)} ريال</td>
+                    <td>
                             <span class="status-badge status-${job.status || 'pending'}">
                                 ${getStatusText(job.status || 'pending')}
-                            </span>
-                        </td>
-                        <td>
-                            <button class="btn btn-sm btn-info me-1" onclick="printInvoice('${job.id.replace(/'/g, "\\'")}')" title="طباعة الفاتورة">
-                                <i class="fas fa-print"></i>
-                            </button>
-                            <button class="btn btn-sm btn-warning me-1" onclick="editJob('${job.id.replace(/'/g, "\\'")}')">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger" onclick="deleteJob('${job.id.replace(/'/g, "\\'")}')">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(row);
+                        </span>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-info me-1" onclick="printInvoice('${job.id.replace(/'/g, "\\'")}')" title="طباعة الفاتورة">
+                            <i class="fas fa-print"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning me-1" onclick="editJob('${job.id.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteJob('${job.id.replace(/'/g, "\\'")}')">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
                 } catch (error) {
                     console.error('❌ Error displaying job:', error, job);
                 }

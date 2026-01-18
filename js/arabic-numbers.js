@@ -98,21 +98,21 @@ function setNumericValue(elementId, value) {
 if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', function() {
         setupArabicNumberSupport();
-        
-        // إعادة تشغيل عند تحديث المحتوى الديناميكي
+    
+    // إعادة تشغيل عند تحديث المحتوى الديناميكي
         if (document.body) {
-            const observer = new MutationObserver(function(mutations) {
-                mutations.forEach(function(mutation) {
-                    if (mutation.type === 'childList') {
-                        // إعادة تطبيق الدعم على العناصر الجديدة
-                        setTimeout(setupArabicNumberSupport, 100);
-                    }
-                });
-            });
-            
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                // إعادة تطبيق الدعم على العناصر الجديدة
+                setTimeout(setupArabicNumberSupport, 100);
+            }
+        });
+    });
+    
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
             });
         }
     });

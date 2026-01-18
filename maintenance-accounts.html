@@ -285,9 +285,12 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">&nbsp;</label>
-                    <div>
+                    <div class="d-flex gap-2">
                         <button class="btn btn-primary" onclick="loadAccounts()">
                             <i class="fas fa-search"></i> بحث
+                        </button>
+                        <button class="btn btn-success" onclick="printAccountsReport()">
+                            <i class="fas fa-file-pdf"></i> طباعة
                         </button>
                     </div>
                 </div>
@@ -653,8 +656,11 @@
                     </td>
                     <td><span class="status-badge status-${rep.status}">${rep.status === 'paid' ? 'مدفوع' : 'معلق'}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-primary" onclick="openPaymentModal('rep', '${rep.repId}', '${rep.repName}')">
-                            <i class="fas fa-credit-card"></i> دفعة
+                        <button class="btn btn-sm btn-primary me-1" onclick="openPaymentModal('rep', '${rep.repId}', '${rep.repName}')">
+                            <i class="fas fa-credit-card"></i>
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="printSingleReport('rep', '${rep.repId}')" title="طباعة تقرير">
+                            <i class="fas fa-print"></i>
                         </button>
                     </td>
                 `;
@@ -700,8 +706,11 @@
                     </td>
                     <td><span class="status-badge status-${tech.status}">${tech.status === 'paid' ? 'مدفوع' : 'معلق'}</span></td>
                     <td>
-                        <button class="btn btn-sm btn-primary" onclick="openPaymentModal('tech', '${tech.techId}', '${tech.techName}')">
-                            <i class="fas fa-credit-card"></i> دفعة
+                        <button class="btn btn-sm btn-primary me-1" onclick="openPaymentModal('tech', '${tech.techId}', '${tech.techName}')">
+                            <i class="fas fa-credit-card"></i>
+                        </button>
+                        <button class="btn btn-sm btn-success" onclick="printSingleReport('tech', '${tech.techId}')" title="طباعة تقرير">
+                            <i class="fas fa-print"></i>
                         </button>
                     </td>
                 `;
@@ -831,6 +840,45 @@
             }
         }
 
+
+        // طباعة تقرير الحسابات
+        function printAccountsReport() {
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            
+            if (!dateFrom || !dateTo) {
+                showAlert('يرجى تحديد الفترة الزمنية أولاً', 'warning');
+                return;
+            }
+            
+            // Build URL with filters
+            const params = new URLSearchParams();
+            params.append('dateFrom', dateFrom);
+            params.append('dateTo', dateTo);
+            
+            const reportUrl = `maintenance-accounts-report.html?${params.toString()}`;
+            window.open(reportUrl, '_blank', 'width=1200,height=800,scrollbars=yes,resizable=yes');
+        }
+
+        // طباعة تقرير فردي لمندوب أو فني
+        function printSingleReport(type, id) {
+            const dateFrom = document.getElementById('dateFrom').value;
+            const dateTo = document.getElementById('dateTo').value;
+            
+            if (!dateFrom || !dateTo) {
+                showAlert('يرجى تحديد الفترة الزمنية أولاً', 'warning');
+                return;
+            }
+            
+            const params = new URLSearchParams();
+            params.append('dateFrom', dateFrom);
+            params.append('dateTo', dateTo);
+            params.append('type', type); // 'rep' or 'tech'
+            params.append('id', id);
+            
+            const reportUrl = `maintenance-accounts-report.html?${params.toString()}`;
+            window.open(reportUrl, '_blank', 'width=900,height=700,scrollbars=yes,resizable=yes');
+        }
 
         // Show alert
         function showAlert(message, type) {

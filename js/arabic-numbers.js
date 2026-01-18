@@ -96,21 +96,25 @@ function setNumericValue(elementId, value) {
 
 // تشغيل تلقائي عند تحميل الصفحة
 if (typeof document !== 'undefined') {
-    document.addEventListener('DOMContentLoaded', setupArabicNumberSupport);
-    
-    // إعادة تشغيل عند تحديث المحتوى الديناميكي
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList') {
-                // إعادة تطبيق الدعم على العناصر الجديدة
-                setTimeout(setupArabicNumberSupport, 100);
-            }
-        });
-    });
-    
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
+    document.addEventListener('DOMContentLoaded', function() {
+        setupArabicNumberSupport();
+        
+        // إعادة تشغيل عند تحديث المحتوى الديناميكي
+        if (document.body) {
+            const observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        // إعادة تطبيق الدعم على العناصر الجديدة
+                        setTimeout(setupArabicNumberSupport, 100);
+                    }
+                });
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
     });
 }
 

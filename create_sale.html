@@ -880,8 +880,23 @@
     }
 
     // ====== إتمام عملية البيع (يحفظ في Firebase إن توفرت) ======
+    let isProcessingSale = false; // منع الضغط المتعدد
+    
     async function completeSale() {
+      // منع الضغط المتعدد
+      if (isProcessingSale) {
+        console.log('⏳ جاري معالجة البيع...');
+        return;
+      }
+      
       if (cart.length === 0) { alert('السلة فارغة'); return; }
+      
+      // تعطيل الزر ووضع علامة المعالجة
+      isProcessingSale = true;
+      const submitBtn = document.getElementById('complete_sale_btn');
+      const originalBtnText = submitBtn.innerHTML;
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المعالجة...';
   
       const total = cart.reduce((s, it) => s + it.totalPrice, 0);
       const saleNumber = 'SALE-' + Date.now().toString().slice(-6);
@@ -924,8 +939,8 @@
         localStorage.setItem('lastSale', JSON.stringify(saleData));
         alert(`تم إنشاء عملية البيع!\nرقم العملية: ${saleNumber}\nالمجموع الإجمالي: ${total.toFixed(2)} ريال\nسعر الشراء: ${totalPurchaseCost.toFixed(2)} ريال`);
   
-      cart = [];
-      updateCartDisplay();
+        cart = [];
+        updateCartDisplay();
         document.getElementById('customerForm')?.reset?.();
         document.getElementById('warranty_input').value = '';
   
@@ -935,6 +950,11 @@
       } catch (err) {
         console.error('❌ حفظ البيع:', err);
         alert('حدث خطأ في حفظ عملية البيع. حاول مرة أخرى.');
+        
+        // إعادة تفعيل الزر في حالة الخطأ فقط
+        isProcessingSale = false;
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
       }
     }
 

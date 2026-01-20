@@ -445,8 +445,6 @@
                         partDiv.innerHTML = `
                             <p style="margin: 4px 0;">
                                 <strong>القطعة ${index + 1}:</strong> ${part.partName || 'غير محدد'}
-                                ${part.repName ? ` (مندوب: ${part.repName})` : ''}
-                                ${part.partCost ? ` - ${part.partCost.toFixed(2)} ريال` : ''}
                             </p>
                         `;
                         partsListEl.appendChild(partDiv);
@@ -458,8 +456,6 @@
                     partDiv.innerHTML = `
                         <p style="margin: 4px 0;">
                             <strong>القطعة:</strong> ${currentJob.partName || 'غير محدد'}
-                            ${currentJob.repName ? ` (مندوب: ${currentJob.repName})` : ''}
-                            ${currentJob.partCost ? ` - ${currentJob.partCost.toFixed(2)} ريال` : ''}
                         </p>
                     `;
                     partsListEl.appendChild(partDiv);
@@ -737,8 +733,6 @@
                             partDiv.innerHTML = `
                                 <p style="margin: 4px 0;">
                                     <strong>القطعة ${index + 1}:</strong> ${part.partName || 'غير محدد'}
-                                    ${part.repName ? ` (مندوب: ${part.repName})` : ''}
-                                    ${part.partCost ? ` - ${part.partCost.toFixed(2)} ريال` : ''}
                                 </p>
                             `;
                             partsListEl.appendChild(partDiv);
@@ -748,10 +742,8 @@
                         const partDiv = document.createElement('div');
                         partDiv.style.margin = '8px 0';
                         partDiv.innerHTML = `
-                            <p style="margin: 4px 0;">
+                            <p style="margin: 4px 0%;">
                                 <strong>القطعة:</strong> ${currentJob.partName || 'غير محدد'}
-                                ${currentJob.repName ? ` (مندوب: ${currentJob.repName})` : ''}
-                                ${currentJob.partCost ? ` - ${currentJob.partCost.toFixed(2)} ريال` : ''}
                             </p>
                         `;
                         partsListEl.appendChild(partDiv);

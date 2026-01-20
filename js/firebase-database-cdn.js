@@ -983,33 +983,33 @@ class FirebaseDatabase {
           uniqueReps.forEach(repId => {
             if (repTotals[repId]) {
               repTotals[repId].jobsCount++;
-            }
+        }
           });
         } 
         // التعامل مع الهيكل القديم (repId واحد)
         else if (job.repId) {
-          if (!repTotals[job.repId]) {
-            repTotals[job.repId] = {
-              repId: job.repId,
-              repName: job.repName || 'غير محدد',
-              jobsCount: 0,
+        if (!repTotals[job.repId]) {
+          repTotals[job.repId] = {
+            repId: job.repId,
+            repName: job.repName || 'غير محدد',
+            jobsCount: 0,
               partsCount: 0,
-              partCostSum: 0,
-              profitSum: 0,
-              techCommissionSum: 0,
-              shopProfitSum: 0,
+            partCostSum: 0,
+            profitSum: 0,
+            techCommissionSum: 0,
+            shopProfitSum: 0,
               revenueSum: 0,
               jobs: []
-            };
-          }
-          
-          repTotals[job.repId].jobsCount++;
+          };
+        }
+        
+        repTotals[job.repId].jobsCount++;
           repTotals[job.repId].partsCount++;
           repTotals[job.repId].partCostSum += (Number(job.partCost) || Number(job.totalPartCost) || 0);
-          repTotals[job.repId].profitSum += (job.profit || 0);
-          repTotals[job.repId].techCommissionSum += (job.techCommission || 0);
-          repTotals[job.repId].shopProfitSum += (job.shopProfit || 0);
-          repTotals[job.repId].revenueSum += (job.amountCharged || 0);
+        repTotals[job.repId].profitSum += (job.profit || 0);
+        repTotals[job.repId].techCommissionSum += (job.techCommission || 0);
+        repTotals[job.repId].shopProfitSum += (job.shopProfit || 0);
+        repTotals[job.repId].revenueSum += (job.amountCharged || 0);
           
           repTotals[job.repId].jobs.push({
             jobId: job.id,

@@ -32,11 +32,14 @@ const DEFAULT_ACCESSORY_CATEGORIES = [
 
 class FirebaseStorageManager {
   constructor() {
+    // استخدام قاعدة البيانات المربوطة من firebase-config
+    // قاعدة البيانات: alsaab-9a1aa
     this.firebaseDB = window.firebaseDatabase;
     this.isFirebaseAvailable = !!(this.firebaseDB && this.firebaseDB.db);
     
     if (this.isFirebaseAvailable) {
       console.log('🔥 Firebase Storage Manager initialized with Firebase');
+      console.log('✅ Connected to database: alsaab-9a1aa');
     } else {
       console.log('💾 Firebase not available, using LocalStorage fallback');
       this.initializeLocalStorage();

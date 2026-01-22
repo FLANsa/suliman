@@ -1,4 +1,4 @@
-# أسطورة الذهبي - Environment Variables
+# ياسر للاتصالات - Environment Variables
 # متغيرات البيئة لنظام إدارة متجر الجوالات
 
 # Firebase Configuration
@@ -12,16 +12,16 @@ FIREBASE_MEASUREMENT_ID=G-77EPVYFWPB
 
 # Application Settings
 NODE_ENV=production
-APP_NAME=Ostora Al-Dhahabi
+APP_NAME=Yasser Communications
 APP_VERSION=2.0.0
 APP_DESCRIPTION=نظام إدارة متجر الجوالات
 
 # Company Information
-COMPANY_NAME=أسطورة الذهبي
-COMPANY_NAME_EN=Ostora Al-Dhahabi
+COMPANY_NAME=ياسر للاتصالات
+COMPANY_NAME_EN=Yasser Communications
 COMPANY_ADDRESS=الرياض، المملكة العربية السعودية
-COMPANY_PHONE=0599254441
-COMPANY_EMAIL=support@ostora-aldhahabi.com
+COMPANY_PHONE=0582222994
+COMPANY_EMAIL=support@yasser-communications.com
 
 # Database Settings
 DATABASE_TYPE=firestore
@@ -35,9 +35,6 @@ JWT_SECRET=aldhahbi-secret-key-2025
 SESSION_SECRET=aldhahbi-session-secret
 ENCRYPTION_KEY=aldhahbi-encryption-key
 
-# VAT Settings (Saudi Arabia)
-VAT_RATE=0.15
-VAT_RATE_PERCENTAGE=15
 
 # File Upload Settings
 MAX_FILE_SIZE=5242880

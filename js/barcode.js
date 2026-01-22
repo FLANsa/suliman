@@ -1,6 +1,6 @@
 /**
  * Barcode Generation and Management
- * أسطورة الذهبي - Phone Store Management System
+ * ياسر للاتصالات - Phone Store Management System
  */
 
 class BarcodeGenerator {

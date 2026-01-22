@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>إضافة هاتف مستعمل — أسطورة الذهبي</title>
+  <title>إضافة هاتف مستعمل — ياسر للاتصالات</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -22,7 +22,7 @@
 
   <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
-      <span class="navbar-brand">أسطورة الذهبي</span>
+      <span class="navbar-brand">ياسر للاتصالات</span>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -66,40 +66,24 @@
               <div class="row">
                 <div class="col-md-6">
                   <div class="mb-3">
-                    <label for="purchase_price" class="form-label">سعر الشراء (بعد الضريبة)</label>
+                    <label for="purchase_price" class="form-label">سعر الشراء</label>
                     <div class="input-group">
                       <input type="text" class="form-control arabic-number-field" id="purchase_price" name="purchase_price" required>
                       <span class="input-group-text">ريال</span>
                     </div>
-                    <small class="form-text text-muted">سيتم حساب السعر قبل الضريبة تلقائياً</small>
                   </div>
                 </div>
                 <div class="col-md-6">
                   <div class="mb-3">
-                    <label for="selling_price" class="form-label">سعر البيع (بعد الضريبة)</label>
+                    <label for="selling_price" class="form-label">سعر البيع</label>
                     <div class="input-group">
                       <input type="text" class="form-control arabic-number-field" id="selling_price" name="selling_price" required>
                       <span class="input-group-text">ريال</span>
                     </div>
-                    <small class="form-text text-muted">سيتم حساب السعر قبل الضريبة تلقائياً</small>
                   </div>
                 </div>
               </div>
 
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">السعر قبل الضريبة</label>
-                    <input type="text" class="form-control" id="purchase_price_before_vat" readonly>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="mb-3">
-                    <label class="form-label">السعر قبل الضريبة</label>
-                    <input type="text" class="form-control" id="selling_price_before_vat" readonly>
-                  </div>
-                </div>
-              </div>
 
               <div class="mb-3">
                 <label for="serial_number" class="form-label">الرقم التسلسلي</label>
@@ -241,21 +225,10 @@
             this.value = cv;
             this.setSelectionRange(pos, pos);
           }
-          updateVATCalculations();
         });
       });
     }
 
-    function calculatePriceWithoutVAT(priceWithVAT){ return (priceWithVAT||0)/1.15; }
-    function updateVATCalculations(){
-      const pFinal = parseArabicNumber(document.getElementById('purchase_price').value);
-      const sFinal = parseArabicNumber(document.getElementById('selling_price').value);
-      document.getElementById('purchase_price_before_vat').value = (pFinal?calculatePriceWithoutVAT(pFinal):0).toFixed(2)+' ريال';
-      document.getElementById('selling_price_before_vat').value  = (sFinal?calculatePriceWithoutVAT(sFinal):0).toFixed(2)+' ريال';
-    }
-    document.getElementById('purchase_price').addEventListener('input', updateVATCalculations);
-    document.getElementById('selling_price').addEventListener('input', updateVATCalculations);
-    document.addEventListener('DOMContentLoaded', updateVATCalculations);
 
     let brandsData = {};
     async function populateBrandsFromFirebase(){
@@ -431,8 +404,6 @@
           condition: 'used',
           purchase_price: parseArabicNumber(document.getElementById('purchase_price').value),
           selling_price: parseArabicNumber(document.getElementById('selling_price').value),
-          purchase_price_without_vat: parseArabicNumber(document.getElementById('purchase_price').value) / 1.15,
-          selling_price_without_vat: parseArabicNumber(document.getElementById('selling_price').value) / 1.15,
           serial_number: document.getElementById('serial_number').value,
           phone_number,
           phone_condition: document.getElementById('phone_condition').value,
@@ -575,7 +546,7 @@
           document.getElementById('age').value = phone.age || phone.battery_level || '';
           
           // تحديث عنوان الصفحة
-          document.title = 'تعديل هاتف مستعمل — أسطورة الذهبي';
+          document.title = 'تعديل هاتف مستعمل — ياسر للاتصالات';
           document.querySelector('h2').textContent = 'تعديل هاتف مستعمل';
           
           // حفظ معرف الهاتف للتعديل

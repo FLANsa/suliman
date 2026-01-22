@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>لوحة التحكم — أسطورة الذهبي</title>
+    <title>لوحة التحكم — ياسر للاتصالات</title>
 
   <!-- نفس الخط/المكتبات المستخدمة في القالب -->
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -44,7 +44,7 @@
   <!-- شريط التنقل -->
   <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
-      <span class="navbar-brand">أسطورة الذهبي</span>
+      <span class="navbar-brand">ياسر للاتصالات</span>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -588,12 +588,12 @@
             if (item.type === 'phone') {
               const phone = phones.find(p => (p.id === item.id || p.phone_id === item.id || p.phone_number === item.id));
               if (phone) {
-                purchasePrice = (phone.purchase_price_with_vat || phone.purchase_price || 0);
+                purchasePrice = (phone.purchase_price || 0);
               }
             } else {
               const accessory = accessories.find(a => (a.id === item.id || a.sku === item.id));
               if (accessory) {
-                purchasePrice = (accessory.purchase_price_with_vat || accessory.purchase_price || 0);
+                purchasePrice = (accessory.purchase_price || 0);
               }
             }
             

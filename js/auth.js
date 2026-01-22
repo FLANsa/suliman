@@ -1,6 +1,6 @@
 /**
  * Authentication Module
- * أسطورة الذهبي - Phone Store Management System
+ * ياسر للاتصالات - Phone Store Management System
  */
 
 class AuthManager {
@@ -13,7 +13,7 @@ class AuthManager {
                 password: 'admin123', // In real app, this should be hashed
                 is_admin: true,
                 full_name: 'مدير النظام',
-                email: 'admin@ostora-aldhahabi.com',
+                email: 'admin@yasser-communications.com',
                 created_at: new Date().toISOString()
             },
             {
@@ -22,7 +22,7 @@ class AuthManager {
                 password: 'user123',
                 is_admin: false,
                 full_name: 'موظف المبيعات',
-                email: 'user@ostora-aldhahabi.com',
+                email: 'user@yasser-communications.com',
                 created_at: new Date().toISOString()
             }
         ];

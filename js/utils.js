@@ -1,35 +1,35 @@
 /**
  * Utility Functions
- * أسطورة الذهبي - Phone Store Management System
+ * ياسر للاتصالات - Phone Store Management System
  */
 
-// VAT Calculation Functions
+// Price Calculation Functions (VAT removed)
 const VATUtils = {
     /**
-     * Calculate VAT amount for a given price
-     * @param {number} amount - Price without VAT
-     * @returns {number} VAT amount
+     * Calculate VAT amount (disabled - returns 0)
+     * @param {number} amount - Price
+     * @returns {number} Always returns 0
      */
     calculateVAT(amount) {
-        return amount * CONFIG.VAT_RATE;
+        return 0;
     },
 
     /**
-     * Calculate price including VAT
-     * @param {number} priceWithoutVAT - Price without VAT
-     * @returns {number} Price with VAT
+     * Calculate price including VAT (disabled - returns same price)
+     * @param {number} price - Price
+     * @returns {number} Same price (no VAT)
      */
-    calculatePriceWithVAT(priceWithoutVAT) {
-        return priceWithoutVAT * (1 + CONFIG.VAT_RATE);
+    calculatePriceWithVAT(price) {
+        return price;
     },
 
     /**
-     * Calculate price excluding VAT
-     * @param {number} priceWithVAT - Price with VAT
-     * @returns {number} Price without VAT
+     * Calculate price excluding VAT (disabled - returns same price)
+     * @param {number} price - Price
+     * @returns {number} Same price (no VAT)
      */
-    calculatePriceWithoutVAT(priceWithVAT) {
-        return priceWithVAT / (1 + CONFIG.VAT_RATE);
+    calculatePriceWithoutVAT(price) {
+        return price;
     }
 };
 

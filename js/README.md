@@ -1,4 +1,4 @@
-# JavaScript Architecture - أسطورة الذهبي
+# JavaScript Architecture - ياسر للاتصالات
 
 ## 📁 File Structure
 
@@ -344,5 +344,5 @@ To extend the system:
 
 ---
 
-**أسطورة الذهبي - Phone Store Management System**
+**ياسر للاتصالات - Phone Store Management System**
 *Modular JavaScript Architecture v1.0*

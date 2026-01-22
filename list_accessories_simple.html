@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>قائمة الأكسسوارات — أسطورة الذهبي</title>
+  <title>قائمة الأكسسوارات — ياسر للاتصالات</title>
 
   <!-- Bootstrap & FontAwesome -->
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -34,7 +34,7 @@
   <!-- شريط التنقل -->
   <nav class="navbar navbar-expand-lg navbar-dark">
     <div class="container">
-      <span class="navbar-brand">أسطورة الذهبي</span>
+      <span class="navbar-brand">ياسر للاتصالات</span>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -151,7 +151,6 @@
   <!-- نظام عرض الأكسسوارات -->
   <script>
     // إعدادات النظام
-    const VAT_RATE = 0.15;
     
     // خريطة الفئات
     const categoryMap = {
@@ -305,11 +304,9 @@
             </td>
             <td>
               ${formatMoney(accessory.purchase_price)} ريال
-              <br><small class="text-muted">مع الضريبة: ${formatMoney(accessory.purchase_price_with_vat || 0)} ريال</small>
             </td>
             <td>
               ${formatMoney(accessory.selling_price)} ريال
-              <br><small class="text-muted">مع الضريبة: ${formatMoney(accessory.selling_price_with_vat || 0)} ريال</small>
             </td>
             <td>
               <span class="${profit >= 0 ? 'profit-positive' : 'profit-negative'}">
@@ -394,10 +391,10 @@
         const newQuantity = prompt('الكمية:', accessory.quantity_in_stock || accessory.quantity);
         if (newQuantity === null) return;
         
-        const newPurchasePrice = prompt('سعر الشراء (بدون ضريبة):', accessory.purchase_price);
+        const newPurchasePrice = prompt('سعر الشراء:', accessory.purchase_price);
         if (newPurchasePrice === null) return;
         
-        const newSellingPrice = prompt('سعر البيع (بدون ضريبة):', accessory.selling_price);
+        const newSellingPrice = prompt('سعر البيع:', accessory.selling_price);
         if (newSellingPrice === null) return;
 
         // التحقق من صحة البيانات
@@ -435,8 +432,6 @@
           quantity: convertedQuantity,
           purchase_price: convertedPurchasePrice,
           selling_price: convertedSellingPrice,
-          purchase_price_with_vat: convertedPurchasePrice * (1 + VAT_RATE),
-          selling_price_with_vat: convertedSellingPrice * (1 + VAT_RATE),
           date_updated: new Date().toISOString()
         };
 

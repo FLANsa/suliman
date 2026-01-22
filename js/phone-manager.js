@@ -1,6 +1,6 @@
 /**
  * Phone Management Module
- * أسطورة الذهبي - Phone Store Management System
+ * ياسر للاتصالات - Phone Store Management System
  */
 
 class PhoneManager {
@@ -45,10 +45,6 @@ class PhoneManager {
                 }
             }
 
-            // Calculate VAT prices
-            const purchasePriceWithVAT = VATUtils.calculatePriceWithVAT(phoneData.purchase_price);
-            const sellingPriceWithVAT = VATUtils.calculatePriceWithVAT(phoneData.selling_price);
-
             // Create phone object
             const phone = {
                 brand: phoneData.brand,
@@ -56,8 +52,6 @@ class PhoneManager {
                 condition: phoneData.condition || 'new',
                 purchase_price: parseFloat(phoneData.purchase_price),
                 selling_price: parseFloat(phoneData.selling_price),
-                purchase_price_with_vat: purchasePriceWithVAT,
-                selling_price_with_vat: sellingPriceWithVAT,
                 serial_number: phoneData.serial_number,
                 phone_number: phoneNumber,
                 description: phoneData.description || '',
@@ -118,18 +112,12 @@ class PhoneManager {
                 return { success: false, error: 'الرقم التسلسلي موجود بالفعل في النظام' };
             }
 
-            // Calculate VAT prices
-            const purchasePriceWithVAT = VATUtils.calculatePriceWithVAT(phoneData.purchase_price);
-            const sellingPriceWithVAT = VATUtils.calculatePriceWithVAT(phoneData.selling_price);
-
             // Update phone data
             const updatedData = {
                 brand: phoneData.brand,
                 model: phoneData.model,
                 purchase_price: parseFloat(phoneData.purchase_price),
                 selling_price: parseFloat(phoneData.selling_price),
-                purchase_price_with_vat: purchasePriceWithVAT,
-                selling_price_with_vat: sellingPriceWithVAT,
                 serial_number: phoneData.serial_number,
                 description: phoneData.description || '',
                 warranty: phoneData.warranty ? parseInt(phoneData.warranty) : null,

@@ -1,4 +1,5 @@
-// Firebase Database Manager for Phone Store Demo
+// Firebase Database Manager for ياسر للاتصالات
+// مرتبط مع قاعدة البيانات Firebase: alsaab-9a1aa
 import { 
   collection, 
   doc, 
@@ -16,8 +17,16 @@ import {
 
 class FirebaseDatabase {
   constructor() {
+    // استخدام قاعدة البيانات المربوطة من firebase-config.js
+    // قاعدة البيانات: alsaab-9a1aa
     this.db = window.firebaseDB;
     this.auth = window.firebaseAuth;
+    
+    if (!this.db) {
+      console.error('❌ Firebase Database not initialized! Make sure firebase-config.js is loaded first.');
+    } else {
+      console.log('✅ Firebase Database Manager connected to: alsaab-9a1aa');
+    }
   }
 
   // ===== إدارة الهواتف =====

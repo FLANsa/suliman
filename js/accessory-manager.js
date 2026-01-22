@@ -1,6 +1,6 @@
 /**
  * Accessory Management Module
- * أسطورة الذهبي - Phone Store Management System
+ * ياسر للاتصالات - Phone Store Management System
  */
 
 class AccessoryManager {
@@ -21,10 +21,6 @@ class AccessoryManager {
                 return { success: false, error: validation.error };
             }
 
-            // Calculate VAT prices
-            const purchasePriceWithVAT = VATUtils.calculatePriceWithVAT(accessoryData.purchase_price);
-            const sellingPriceWithVAT = VATUtils.calculatePriceWithVAT(accessoryData.selling_price);
-
             // Create accessory object
             const accessory = {
                 name: accessoryData.name.trim(),
@@ -32,8 +28,6 @@ class AccessoryManager {
                 description: accessoryData.description ? accessoryData.description.trim() : '',
                 purchase_price: parseFloat(accessoryData.purchase_price),
                 selling_price: parseFloat(accessoryData.selling_price),
-                purchase_price_with_vat: purchasePriceWithVAT,
-                selling_price_with_vat: sellingPriceWithVAT,
                 quantity_in_stock: parseInt(accessoryData.quantity) || 0,
                 min_quantity: parseInt(accessoryData.min_quantity) || 5,
                 supplier: accessoryData.supplier ? accessoryData.supplier.trim() : '',
@@ -77,10 +71,6 @@ class AccessoryManager {
                 return { success: false, error: validation.error };
             }
 
-            // Calculate VAT prices
-            const purchasePriceWithVAT = VATUtils.calculatePriceWithVAT(accessoryData.purchase_price);
-            const sellingPriceWithVAT = VATUtils.calculatePriceWithVAT(accessoryData.selling_price);
-
             // Update accessory data
             const updatedData = {
                 name: accessoryData.name.trim(),
@@ -88,8 +78,6 @@ class AccessoryManager {
                 description: accessoryData.description ? accessoryData.description.trim() : '',
                 purchase_price: parseFloat(accessoryData.purchase_price),
                 selling_price: parseFloat(accessoryData.selling_price),
-                purchase_price_with_vat: purchasePriceWithVAT,
-                selling_price_with_vat: sellingPriceWithVAT,
                 quantity_in_stock: parseInt(accessoryData.quantity) || 0,
                 min_quantity: parseInt(accessoryData.min_quantity) || 5,
                 supplier: accessoryData.supplier ? accessoryData.supplier.trim() : '',

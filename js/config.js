@@ -1,16 +1,13 @@
 /**
  * Configuration and Constants
- * أسطورة الذهبي - Phone Store Management System
+ * ياسر للاتصالات - Phone Store Management System
  */
 
-// VAT Configuration for Saudi Arabia
 const CONFIG = {
-    VAT_RATE: 0.15, // 15% VAT rate
     COMPANY_INFO: {
-        name: "أسطورة الذهبي",
-        vatNumber: "7034630488",
+        name: "ياسر للاتصالات",
         address: "الرياض، المملكة العربية السعودية",
-        phone: "0599254441"
+        phone: "0582222994"
     },
     STORAGE_KEYS: {
         PHONES: 'phone_store_phones',

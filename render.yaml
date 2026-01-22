@@ -1,29 +1,25 @@
 services:
   - type: static
-    name: ostora-aldhahabi
+    name: yasser-communications
     buildCommand: ""
     staticPublishPath: ./
     envVars:
       - key: NODE_ENV
         value: production
       - key: APP_NAME
-        value: Ostora Al-Dhahabi
+        value: Yasser Communications
       - key: APP_VERSION
         value: "2.0.0"
       - key: COMPANY_NAME
-        value: أسطورة الذهبي
+        value: ياسر للاتصالات
       - key: COMPANY_NAME_EN
-        value: Ostora Al-Dhahabi
+        value: Yasser Communications
       - key: COMPANY_ADDRESS
         value: الرياض، المملكة العربية السعودية
       - key: COMPANY_PHONE
-        value: "0599254441"
+        value: "0582222994"
       - key: COMPANY_EMAIL
-        value: support@ostora-aldhahabi.com
-      - key: VAT_RATE
-        value: "0.15"
-      - key: VAT_RATE_PERCENTAGE
-        value: "15"
+        value: support@yasser-communications.com
       - key: DATABASE_TYPE
         value: firestore
       - key: DATABASE_COLLECTION_PHONES

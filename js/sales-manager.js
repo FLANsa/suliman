@@ -1,6 +1,6 @@
 /**
  * Sales Management Module
- * أسطورة الذهبي - Phone Store Management System
+ * ياسر للاتصالات - Phone Store Management System
  */
 
 class SalesManager {
@@ -50,14 +50,12 @@ class SalesManager {
                 await this.updateInventoryForSale(item);
             }
 
-            const vatAmount = subtotal * CONFIG.VAT_RATE;
-            const totalAmount = subtotal + vatAmount;
+            const totalAmount = subtotal;
 
             // Create sale object
             const sale = {
                 sale_number: IDUtils.generateSaleNumber(),
                 company_name: CONFIG.COMPANY_INFO.name,
-                company_vat_number: CONFIG.COMPANY_INFO.vatNumber,
                 company_address: CONFIG.COMPANY_INFO.address,
                 company_phone: CONFIG.COMPANY_INFO.phone,
                 customer_name: saleData.customer_name || 'عميل نقدي',
@@ -65,7 +63,6 @@ class SalesManager {
                 customer_email: saleData.customer_email || '',
                 customer_address: saleData.customer_address || '',
                 subtotal: subtotal,
-                vat_amount: vatAmount,
                 total_amount: totalAmount,
                 payment_method: saleData.payment_method || 'نقدي',
                 notes: saleData.notes || '',
@@ -276,7 +273,6 @@ class SalesManager {
             total_sales_count: sales.length,
             total_sales_amount: 0,
             total_sales_subtotal: 0,
-            total_vat_amount: 0,
             total_actual_profit: 0,
             completed_sales: 0,
             cancelled_sales: 0,
@@ -291,7 +287,6 @@ class SalesManager {
             // Basic totals
             stats.total_sales_amount += sale.total_amount || 0;
             stats.total_sales_subtotal += sale.subtotal || 0;
-            stats.total_vat_amount += sale.vat_amount || 0;
 
             // Status counts
             if (sale.status === 'مكتمل') {
@@ -503,14 +498,6 @@ class SalesManager {
                 </div>
 
                 <div class="receipt-summary">
-                    <div class="summary-row">
-                        <span>المجموع قبل الضريبة:</span>
-                        <span>${FormatUtils.formatMoney(sale.subtotal)} ريال</span>
-                    </div>
-                    <div class="summary-row">
-                        <span>الضريبة (15%):</span>
-                        <span>${FormatUtils.formatMoney(sale.vat_amount)} ريال</span>
-                    </div>
                     <div class="summary-row total">
                         <span>المبلغ الإجمالي:</span>
                         <span>${FormatUtils.formatMoney(sale.total_amount)} ريال</span>

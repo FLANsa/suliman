@@ -1,16 +1,17 @@
-// Firebase Configuration for Phone Store Demo - CDN Version
-// إعدادات Firebase للمستودع الجديد - نسخة CDN
+// Firebase Configuration for ياسر للاتصالات - CDN Version
+// إعدادات Firebase لمشروع ياسر للاتصالات - نسخة CDN
+// مرتبط مع قاعدة البيانات: alsaab-9a1aa
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyALjSQ2TqrwCMHEz8DLfhBohdbUgqR04Lk",
-  authDomain: "ostora-aldhhabi.firebaseapp.com",
-  projectId: "ostora-aldhhabi",
-  storageBucket: "ostora-aldhhabi.firebasestorage.app",
-  messagingSenderId: "943553442606",
-  appId: "1:943553442606:web:250a0325b89b9f5b5600bf",
-  measurementId: "G-04HHQ5JEJE"
+  apiKey: "AIzaSyCX6SGOZrP2Fs0bQug_H5mHdLwL2HLwxMg",
+  authDomain: "alsaab-9a1aa.firebaseapp.com",
+  projectId: "alsaab-9a1aa",
+  storageBucket: "alsaab-9a1aa.firebasestorage.app",
+  messagingSenderId: "287935376685",
+  appId: "1:287935376685:web:c3b9d0d4cf93e85fff77a4",
+  measurementId: "G-L2ZYLYZB2H"
 };
 
 // Import the functions you need from the SDKs you need (CDN version)
@@ -41,3 +42,5 @@ console.log('📊 Firestore Database:', db);
 console.log('🔐 Authentication:', auth);
 console.log('📦 Storage:', storage);
 console.log('📈 Analytics:', analytics);
+console.log('✅ Connected to Firebase project: alsaab-9a1aa');
+console.log('✅ Database ready for ياسر للاتصالات');

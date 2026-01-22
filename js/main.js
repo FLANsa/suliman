@@ -1,6 +1,6 @@
 /**
  * Main Application Entry Point
- * أسطورة الذهبي - Phone Store Management System
+ * ياسر للاتصالات - Phone Store Management System
  */
 
 // Global application state
@@ -416,7 +416,6 @@ window.PhoneStoreApp = {
         document.getElementById('total_sales_count').textContent = salesStats.total_sales_count;
         document.getElementById('total_sales_amount').textContent = FormatUtils.formatMoney(salesStats.total_sales_amount);
         document.getElementById('total_sales_subtotal').textContent = FormatUtils.formatMoney(salesStats.total_sales_subtotal);
-        document.getElementById('total_vat_amount').textContent = FormatUtils.formatMoney(salesStats.total_vat_amount);
     },
 
     loadPhoneTypes() {

@@ -1,4 +1,4 @@
-# أسطورة الذهبي - نظام إدارة متجر الجوالات
+# ياسر للاتصالات - نظام إدارة متجر الجوالات
 
 نظام متكامل لإدارة متجر الهواتف المحمولة الجديدة والمستعملة باللغة العربية.
 
@@ -35,12 +35,12 @@
 2. **اضغط على "New +" ثم "Static Site"**
 3. **اتصل بـ GitHub:**
    - اختر "Build and deploy from a Git repository"
-   - اختر مستودع `ostora-aldhahabi`
+   - اختر مستودع `yasser-communications`
    - اختر الفرع `main`
 
 4. **إعدادات النشر:**
    ```
-   Name: ostora-aldhahabi
+   Name: yasser-communications
    Branch: main
    Root Directory: ./
    Build Command: (اتركه فارغ)
@@ -56,7 +56,7 @@
 ```yaml
 services:
   - type: static
-    name: ostora-aldhahabi
+    name: yasser-communications
     buildCommand: ""
     staticPublishPath: ./
     envVars:
@@ -75,7 +75,7 @@ services:
 
 ### 1. إنشاء مشروع Firebase
 - اذهب إلى [Firebase Console](https://console.firebase.google.com)
-- أنشئ مشروع جديد باسم `ostora-aldhahabi`
+- أنشئ مشروع جديد باسم `alsaab-9a1aa` (أو اسم مشروع Firebase الخاص بك)
 
 ### 2. تفعيل الخدمات المطلوبة
 - **Firestore Database** - قاعدة البيانات
@@ -142,8 +142,8 @@ services:
 
 ```bash
 # استنساخ المشروع
-git clone https://github.com/FLANsa/ostora-aldhahabi.git
-cd ostora-aldhahabi
+git clone https://github.com/YOUR_USERNAME/yasser-communications.git
+cd yasser-communications
 
 # تشغيل الخادم المحلي
 python3 -m http.server 8000
@@ -155,7 +155,7 @@ npx http-server -p 8000
 ## 📞 الدعم
 
 للدعم التقني أو الاستفسارات:
-- **GitHub Issues**: [إنشاء مشكلة](https://github.com/FLANsa/ostora-aldhahabi/issues)
+- **GitHub Issues**: [إنشاء مشكلة](https://github.com/YOUR_USERNAME/yasser-communications/issues)
 - **Email**: support@blackfingerprint.com
 
 ## 📄 الترخيص
@@ -164,4 +164,4 @@ npx http-server -p 8000
 
 ---
 
-**أسطورة الذهبي** - رؤيتنا هي تقديم أفضل حلول إدارة متاجر الجوالات في المملكة العربية السعودية.
+**ياسر للاتصالات** - رؤيتنا هي تقديم أفضل حلول إدارة متاجر الجوالات في المملكة العربية السعودية.

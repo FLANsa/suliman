@@ -522,15 +522,26 @@ class FirebaseDatabase {
   // ===== أعمال الصيانة =====
   async addMaintenanceJob(jobData) {
     try {
-      // ✅ حساب الأرباح باستخدام الدالة الموحدة
+      // ✅ حساب إجمالي تكلفة القطع من مصفوفة parts أو totalPartCost أو partCost
+      let totalPartCost = 0;
+      if (jobData.parts && Array.isArray(jobData.parts) && jobData.parts.length > 0) {
+        totalPartCost = jobData.parts.reduce((sum, part) => sum + (Number(part.partCost) || 0), 0);
+      } else if (jobData.totalPartCost !== undefined) {
+        totalPartCost = Number(jobData.totalPartCost) || 0;
+      } else if (jobData.partCost !== undefined) {
+        totalPartCost = Number(jobData.partCost) || 0; // للتوافق مع البيانات القديمة
+      }
+
+      // ✅ حساب الأرباح باستخدام الدالة الموحدة مع totalPartCost
       const { profit, techCommission, shopProfit } = this.computeDerived(
-        jobData.partCost, 
+        totalPartCost, 
         jobData.amountCharged, 
         jobData.techPercent !== undefined ? jobData.techPercent : 0
       );
 
       const docRef = await addDoc(collection(this.db, 'maintenanceJobs'), {
         ...jobData,
+        totalPartCost, // ✅ حفظ totalPartCost في قاعدة البيانات
         profit,
         techCommission,
         shopProfit,
@@ -539,6 +550,7 @@ class FirebaseDatabase {
         updatedAt: serverTimestamp()
       });
       console.log('✅ Maintenance job added with ID:', docRef.id);
+      console.log('💰 Calculated values - totalPartCost:', totalPartCost, 'profit:', profit, 'techCommission:', techCommission);
       return docRef.id;
     } catch (error) {
       console.error('❌ Error adding maintenance job:', error);
@@ -718,18 +730,48 @@ class FirebaseDatabase {
 
   async updateMaintenanceJob(jobId, jobData) {
     try {
+      // ✅ حساب إجمالي تكلفة القطع من jobData أو currentJob
+      const currentJob = await this.getMaintenanceJob(jobId);
+      
+      // حساب totalPartCost من jobData
+      let totalPartCost = 0;
+      if (jobData.parts && Array.isArray(jobData.parts) && jobData.parts.length > 0) {
+        totalPartCost = jobData.parts.reduce((sum, part) => sum + (Number(part.partCost) || 0), 0);
+      } else if (jobData.totalPartCost !== undefined) {
+        totalPartCost = Number(jobData.totalPartCost) || 0;
+      } else if (jobData.partCost !== undefined) {
+        totalPartCost = Number(jobData.partCost) || 0; // للتوافق مع البيانات القديمة
+      } else {
+        // استخدام القيمة من currentJob إذا لم تكن موجودة في jobData
+        if (currentJob.parts && Array.isArray(currentJob.parts) && currentJob.parts.length > 0) {
+          totalPartCost = currentJob.parts.reduce((sum, part) => sum + (Number(part.partCost) || 0), 0);
+        } else if (currentJob.totalPartCost !== undefined) {
+          totalPartCost = Number(currentJob.totalPartCost) || 0;
+        } else if (currentJob.partCost !== undefined) {
+          totalPartCost = Number(currentJob.partCost) || 0;
+        }
+      }
+
       // ✅ إعادة حساب الأرباح إذا تغيرت القيم باستخدام الدالة الموحدة
-      if (jobData.partCost !== undefined || jobData.amountCharged !== undefined || jobData.techPercent !== undefined) {
-        const currentJob = await this.getMaintenanceJob(jobId);
-        const partCost = jobData.partCost !== undefined ? jobData.partCost : currentJob.partCost;
+      const shouldRecalculate = jobData.parts !== undefined || 
+                                jobData.totalPartCost !== undefined || 
+                                jobData.partCost !== undefined || 
+                                jobData.amountCharged !== undefined || 
+                                jobData.techPercent !== undefined;
+      
+      if (shouldRecalculate) {
         const amountCharged = jobData.amountCharged !== undefined ? jobData.amountCharged : currentJob.amountCharged;
-        const techPercent = jobData.techPercent !== undefined ? jobData.techPercent : currentJob.techPercent;
+        const techPercent = jobData.techPercent !== undefined ? jobData.techPercent : 
+                          (currentJob.techPercent !== undefined ? currentJob.techPercent : 0);
         
-        const { profit, techCommission, shopProfit } = this.computeDerived(partCost, amountCharged, techPercent);
+        const { profit, techCommission, shopProfit } = this.computeDerived(totalPartCost, amountCharged, techPercent);
         
         jobData.profit = profit;
         jobData.techCommission = techCommission;
         jobData.shopProfit = shopProfit;
+        jobData.totalPartCost = totalPartCost; // ✅ حفظ totalPartCost في قاعدة البيانات
+        
+        console.log('💰 Recalculated values - totalPartCost:', totalPartCost, 'profit:', profit, 'techCommission:', techCommission);
       }
 
       const jobRef = doc(this.db, 'maintenanceJobs', jobId);
@@ -992,7 +1034,12 @@ class FirebaseDatabase {
           uniqueReps.forEach(repId => {
             if (repTotals[repId]) {
               repTotals[repId].jobsCount++;
-        }
+              // ✅ إضافة revenueSum و profitSum و techCommissionSum و shopProfitSum مرة واحدة لكل عمل
+              repTotals[repId].revenueSum += (job.amountCharged || 0);
+              repTotals[repId].profitSum += (job.profit || 0);
+              repTotals[repId].techCommissionSum += (job.techCommission || 0);
+              repTotals[repId].shopProfitSum += (job.shopProfit || 0);
+            }
           });
         } 
         // التعامل مع الهيكل القديم (repId واحد)
@@ -1091,31 +1138,30 @@ class FirebaseDatabase {
           };
         }
         
-        // حساب إجمالي تكلفة القطع
+        // حساب إجمالي تكلفة القطع (تفضيل totalPartCost أولاً)
         let totalPartCost = 0;
         if (job.parts && Array.isArray(job.parts) && job.parts.length > 0) {
           totalPartCost = job.parts.reduce((sum, part) => sum + (Number(part.partCost) || 0), 0);
-        } else if (job.partCost !== undefined) {
-          totalPartCost = Number(job.partCost) || 0;
         } else if (job.totalPartCost !== undefined) {
           totalPartCost = Number(job.totalPartCost) || 0;
+        } else if (job.partCost !== undefined) {
+          totalPartCost = Number(job.partCost) || 0; // للتوافق مع البيانات القديمة
         }
         
         const amountCharged = Number(job.amountCharged) || 0;
         const profit = amountCharged - totalPartCost;
         
-        // ✅ حساب عمولة الفني - استخدم القيمة المحفوظة أو احسبها
-        let techCommission = 0;
-        if (job.techCommission !== undefined && job.techCommission !== null && Number(job.techCommission) > 0) {
-          // استخدم القيمة المحفوظة إذا كانت موجودة وصحيحة
-          techCommission = Number(job.techCommission);
-          console.log(`✅ Using saved techCommission for job ${job.id}:`, techCommission);
-        } else {
-          // احسب من techPercent و profit إذا لم تكن القيمة محفوظة
-          const techPercent = job.techPercent !== undefined ? Number(job.techPercent) : 
-                             (techInfo?.defaultCommissionPercent !== undefined ? techInfo.defaultCommissionPercent : 0);
-          techCommission = Math.max(0, profit * techPercent);
-          console.log(`📊 Calculated techCommission for job ${job.id}:`, techCommission, 'from profit:', profit, 'techPercent:', techPercent);
+        // ✅ حساب عمولة الفني - إعادة الحساب دائماً من profit و techPercent لضمان الدقة
+        const techPercent = job.techPercent !== undefined ? Number(job.techPercent) : 
+                           (techInfo?.defaultCommissionPercent !== undefined ? techInfo.defaultCommissionPercent : 0);
+        const techCommission = Math.max(0, profit * techPercent);
+        
+        // التحقق من أن القيمة المحفوظة متطابقة (للتحقق من صحة البيانات)
+        if (job.techCommission !== undefined && job.techCommission !== null) {
+          const savedCommission = Number(job.techCommission);
+          if (Math.abs(savedCommission - techCommission) > 0.01) {
+            console.warn(`⚠️ Job ${job.id} has inconsistent techCommission: saved=${savedCommission}, calculated=${techCommission}. Using calculated value.`);
+          }
         }
         
         const shopProfit = profit - techCommission;
@@ -1127,7 +1173,7 @@ class FirebaseDatabase {
         techTotals[job.techId].shopProfitSum += shopProfit;
         techTotals[job.techId].revenueSum += amountCharged;
         
-        console.log(`💰 Job ${job.id} - techCommission: ${techCommission}, techCommissionSum now: ${techTotals[job.techId].techCommissionSum}`);
+        console.log(`💰 Job ${job.id} - totalPartCost: ${totalPartCost}, amountCharged: ${amountCharged}, profit: ${profit}, techCommission: ${techCommission}`);
       });
 
       const result = Object.values(techTotals);

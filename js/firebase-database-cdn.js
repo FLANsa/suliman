@@ -1044,14 +1044,12 @@ class FirebaseDatabase {
     try {
       console.log('🔍 Getting tech settlements from', dateFrom, 'to', dateTo, 'status:', statusFilter);
       
-      // إذا لم يتم تحديد فلتر الحالة، جلب جميع العمليات
+      // ✅ جلب الأعمال المكتملة فقط (done)
       const filters = {
         dateFrom,
-        dateTo
+        dateTo,
+        status: 'done' // ✅ فقط الأعمال المكتملة
       };
-      if (statusFilter) {
-        filters.status = statusFilter;
-      }
       
       const jobs = await this.getMaintenanceJobs(filters);
       
@@ -1062,10 +1060,16 @@ class FirebaseDatabase {
         techMap[tech.id] = tech;
       });
 
-      console.log('📊 Found jobs for tech settlements:', jobs.length);
+      console.log('📊 Found completed jobs for tech settlements:', jobs.length);
 
       const techTotals = {};
       jobs.forEach(job => {
+        // ✅ فلترة الأعمال المكتملة فقط
+        if (job.status !== 'done') {
+          console.warn('⚠️ Skipping non-completed job:', job.id, 'status:', job.status);
+          return;
+        }
+        
         if (!job.techId) {
           console.warn('⚠️ Job missing techId:', job);
           return;
@@ -1100,16 +1104,18 @@ class FirebaseDatabase {
         const amountCharged = Number(job.amountCharged) || 0;
         const profit = amountCharged - totalPartCost;
         
-        // حساب عمولة الفني - استخدم القيمة المحفوظة أو احسبها
+        // ✅ حساب عمولة الفني - استخدم القيمة المحفوظة أو احسبها
         let techCommission = 0;
-        if (job.techCommission !== undefined && job.techCommission !== null && job.techCommission > 0) {
+        if (job.techCommission !== undefined && job.techCommission !== null && Number(job.techCommission) > 0) {
           // استخدم القيمة المحفوظة إذا كانت موجودة وصحيحة
-          techCommission = Number(job.techCommission) || 0;
+          techCommission = Number(job.techCommission);
+          console.log(`✅ Using saved techCommission for job ${job.id}:`, techCommission);
         } else {
           // احسب من techPercent و profit إذا لم تكن القيمة محفوظة
           const techPercent = job.techPercent !== undefined ? Number(job.techPercent) : 
                              (techInfo?.defaultCommissionPercent !== undefined ? techInfo.defaultCommissionPercent : 0);
           techCommission = Math.max(0, profit * techPercent);
+          console.log(`📊 Calculated techCommission for job ${job.id}:`, techCommission, 'from profit:', profit, 'techPercent:', techPercent);
         }
         
         const shopProfit = profit - techCommission;
@@ -1120,10 +1126,13 @@ class FirebaseDatabase {
         techTotals[job.techId].techCommissionSum += techCommission;
         techTotals[job.techId].shopProfitSum += shopProfit;
         techTotals[job.techId].revenueSum += amountCharged;
+        
+        console.log(`💰 Job ${job.id} - techCommission: ${techCommission}, techCommissionSum now: ${techTotals[job.techId].techCommissionSum}`);
       });
 
       const result = Object.values(techTotals);
       console.log('✅ Tech settlements calculated:', result);
+      console.log('📊 Tech commission details:', result.map(t => ({ name: t.techName, commission: t.techCommissionSum })));
       return result;
     } catch (error) {
       console.error('❌ Error getting tech settlements:', error);

@@ -1054,6 +1054,13 @@ class FirebaseDatabase {
       }
       
       const jobs = await this.getMaintenanceJobs(filters);
+      
+      // جلب بيانات الفنيين للحصول على رقم الهاتف
+      const technicians = await this.getTechnicians();
+      const techMap = {};
+      technicians.forEach(tech => {
+        techMap[tech.id] = tech;
+      });
 
       console.log('📊 Found jobs for tech settlements:', jobs.length);
 
@@ -1064,10 +1071,13 @@ class FirebaseDatabase {
           return;
         }
         
+        const techInfo = techMap[job.techId];
+        
         if (!techTotals[job.techId]) {
           techTotals[job.techId] = {
             techId: job.techId,
-            techName: job.techName || 'غير محدد',
+            techName: job.techName || techInfo?.name || 'غير محدد',
+            phone: techInfo?.phone || job.techPhone || 'N/A',
             jobsCount: 0,
             partCostSum: 0,
             profitSum: 0,
@@ -1077,12 +1087,39 @@ class FirebaseDatabase {
           };
         }
         
+        // حساب إجمالي تكلفة القطع
+        let totalPartCost = 0;
+        if (job.parts && Array.isArray(job.parts) && job.parts.length > 0) {
+          totalPartCost = job.parts.reduce((sum, part) => sum + (Number(part.partCost) || 0), 0);
+        } else if (job.partCost !== undefined) {
+          totalPartCost = Number(job.partCost) || 0;
+        } else if (job.totalPartCost !== undefined) {
+          totalPartCost = Number(job.totalPartCost) || 0;
+        }
+        
+        const amountCharged = Number(job.amountCharged) || 0;
+        const profit = amountCharged - totalPartCost;
+        
+        // حساب عمولة الفني - استخدم القيمة المحفوظة أو احسبها
+        let techCommission = 0;
+        if (job.techCommission !== undefined && job.techCommission !== null && job.techCommission > 0) {
+          // استخدم القيمة المحفوظة إذا كانت موجودة وصحيحة
+          techCommission = Number(job.techCommission) || 0;
+        } else {
+          // احسب من techPercent و profit إذا لم تكن القيمة محفوظة
+          const techPercent = job.techPercent !== undefined ? Number(job.techPercent) : 
+                             (techInfo?.defaultCommissionPercent !== undefined ? techInfo.defaultCommissionPercent : 0);
+          techCommission = Math.max(0, profit * techPercent);
+        }
+        
+        const shopProfit = profit - techCommission;
+        
         techTotals[job.techId].jobsCount++;
-        techTotals[job.techId].partCostSum += (job.partCost || 0);
-        techTotals[job.techId].profitSum += (job.profit || 0);
-        techTotals[job.techId].techCommissionSum += (job.techCommission || 0);
-        techTotals[job.techId].shopProfitSum += (job.shopProfit || 0);
-        techTotals[job.techId].revenueSum += (job.amountCharged || 0);
+        techTotals[job.techId].partCostSum += totalPartCost;
+        techTotals[job.techId].profitSum += profit;
+        techTotals[job.techId].techCommissionSum += techCommission;
+        techTotals[job.techId].shopProfitSum += shopProfit;
+        techTotals[job.techId].revenueSum += amountCharged;
       });
 
       const result = Object.values(techTotals);

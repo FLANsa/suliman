@@ -160,7 +160,10 @@
               </div>
 
               <div class="text-center">
-                <button type="submit" class="btn btn-primary">إضافة الهاتف الجديد</button>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                  <span id="submitBtnText">إضافة الهاتف الجديد</span>
+                  <span id="submitBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                </button>
                 <a href="dashboard.html" class="btn btn-secondary">عودة للوحة التحكم</a>
               </div>
             </form>
@@ -347,7 +350,37 @@
       return String(next).padStart(6,'0');
     }
 
+    // متغير لتتبع حالة المعالجة
+    let isProcessing = false;
+
+    // دالة لتغيير حالة الزر
+    function setSubmitButtonState(loading) {
+      const submitBtn = document.getElementById('submitBtn');
+      const submitBtnText = document.getElementById('submitBtnText');
+      const submitBtnSpinner = document.getElementById('submitBtnSpinner');
+      
+      if (loading) {
+        isProcessing = true;
+        submitBtn.disabled = true;
+        submitBtnText.textContent = 'جاري الحفظ...';
+        submitBtnSpinner.classList.remove('d-none');
+      } else {
+        isProcessing = false;
+        submitBtn.disabled = false;
+        submitBtnText.textContent = window.editingPhoneId ? 'تحديث الهاتف' : 'إضافة الهاتف الجديد';
+        submitBtnSpinner.classList.add('d-none');
+      }
+    }
+
     async function savePhoneToFirebase(){
+      // منع الضغط المتكرر
+      if (isProcessing) {
+        return false;
+      }
+      
+      // تفعيل حالة التحميل
+      setSubmitButtonState(true);
+      
       try{
         // Validate customer ID and phone number
         const customerId = document.getElementById('customer_id').value.trim();
@@ -356,12 +389,14 @@
         if (!customerId || customerId.length !== 10 || !/^[0-9]{10}$/.test(customerId)) {
           alert('رقم الهوية/الإقامة مطلوب ويجب أن يكون 10 أرقام');
           document.getElementById('customer_id').focus();
+          setSubmitButtonState(false);
           return false;
         }
         
         if (!customerPhone || customerPhone.length !== 10 || !/^[0-9]{10}$/.test(customerPhone)) {
           alert('رقم هاتف العميل مطلوب ويجب أن يكون 10 أرقام');
           document.getElementById('customer_phone').focus();
+          setSubmitButtonState(false);
           return false;
         }
 
@@ -389,8 +424,16 @@
           date_added: new Date().toISOString()
         };
 
-        if(!phoneData.brand || !phoneData.model || !phoneData.serial_number){ alert('يرجى ملء جميع الحقول المطلوبة'); return false; }
-        if(phoneData.purchase_price<=0 || phoneData.selling_price<=0){ alert('يرجى إدخال أسعار صحيحة'); return false; }
+        if(!phoneData.brand || !phoneData.model || !phoneData.serial_number){ 
+          alert('يرجى ملء جميع الحقول المطلوبة'); 
+          setSubmitButtonState(false);
+          return false; 
+        }
+        if(phoneData.purchase_price<=0 || phoneData.selling_price<=0){ 
+          alert('يرجى إدخال أسعار صحيحة'); 
+          setSubmitButtonState(false);
+          return false; 
+        }
 
         // handoff سريع للملصق
         localStorage.setItem('lastAddedPhone', JSON.stringify(phoneData));
@@ -443,9 +486,16 @@
             return true;
           }
         }
-        alert('❌ تعذّر الحفظ'); return false;
+        alert('❌ تعذّر الحفظ'); 
+        setSubmitButtonState(false);
+        return false;
 
-      }catch(err){ console.error(err); alert('❌ حدث خطأ في حفظ الهاتف.'); return false; }
+      }catch(err){ 
+        console.error(err); 
+        alert('❌ حدث خطأ في حفظ الهاتف.'); 
+        setSubmitButtonState(false);
+        return false; 
+      }
     }
 
     // Add input validation for customer ID and phone

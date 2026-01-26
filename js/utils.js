@@ -85,9 +85,36 @@ const IDUtils = {
      * @returns {string} Unique phone number
      */
     generateUniquePhoneNumber(existingPhones = []) {
-        const existingNumbers = existingPhones.map(phone => parseInt(phone.phone_number || '0'));
-        const maxNumber = existingNumbers.length > 0 ? Math.max(...existingNumbers) : 0;
-        const nextNumber = maxNumber + 1;
+        // تحويل جميع الأرقام المستخدمة إلى مجموعة (Set) للبحث السريع
+        const existingNumbersSet = new Set();
+        existingPhones.forEach(phone => {
+            const num = phone.phone_number;
+            if (num) {
+                const parsed = parseInt(num, 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    existingNumbersSet.add(parsed);
+                }
+            }
+        });
+        
+        // البحث عن أول رقم متاح (إما الرقم التالي أو رقم في فجوة)
+        const maxNumber = existingNumbersSet.size > 0 ? Math.max(...Array.from(existingNumbersSet)) : 0;
+        let nextNumber = maxNumber + 1;
+        
+        // إذا كان الرقم التالي مستخدماً، ابحث عن أول رقم متاح في الفجوات
+        if (existingNumbersSet.has(nextNumber)) {
+            // ابحث عن أول رقم متاح من 1 إلى maxNumber
+            for (let i = 1; i <= maxNumber; i++) {
+                if (!existingNumbersSet.has(i)) {
+                    nextNumber = i;
+                    break;
+                }
+            }
+            // إذا لم نجد فجوة، استخدم الرقم التالي
+            if (existingNumbersSet.has(nextNumber)) {
+                nextNumber = maxNumber + 1;
+            }
+        }
         
         if (nextNumber > 100000) {
             throw new Error("تم الوصول للحد الأقصى من أرقام الهواتف (100000)");

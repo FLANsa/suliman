@@ -344,10 +344,30 @@
       }catch(e){ console.error(e); alert('❌ حدث خطأ في الحذف.'); }
     }
 
-    function generatePhoneNumber(){
-      let last = localStorage.getItem('lastDeviceNumber')||'0';
-      const next = (parseInt(last,10)+1); localStorage.setItem('lastDeviceNumber', String(next));
-      return String(next).padStart(6,'0');
+    async function generatePhoneNumber(){
+      // جلب جميع الهواتف من Firebase أو localStorage للتحقق من الأرقام المستخدمة
+      let phones = [];
+      try {
+        if(window.storage && window.storage.isFirebaseAvailable){
+          phones = await window.storage.getPhones();
+        } else {
+          phones = JSON.parse(localStorage.getItem('phones') || '[]');
+        }
+      } catch (error) {
+        console.error('خطأ في جلب الهواتف:', error);
+        phones = JSON.parse(localStorage.getItem('phones') || '[]');
+      }
+      
+      // استخدام IDUtils.generateUniquePhoneNumber مع جميع الهواتف
+      const uniqueNumber = IDUtils.generateUniquePhoneNumber(phones);
+      
+      // تحديث lastDeviceNumber في localStorage للتوافق مع الكود القديم
+      const numValue = parseInt(uniqueNumber, 10);
+      if (!isNaN(numValue)) {
+        localStorage.setItem('lastDeviceNumber', String(numValue));
+      }
+      
+      return uniqueNumber;
     }
 
     // متغير لتتبع حالة المعالجة
@@ -400,7 +420,37 @@
           return false;
         }
 
-        const phone_number = generatePhoneNumber();
+        // توليد رقم هاتف فريد مع التحقق من التكرار
+        let phone_number;
+        let attempts = 0;
+        const maxAttempts = 10;
+        do {
+          phone_number = await generatePhoneNumber();
+          attempts++;
+          
+          // التحقق من عدم وجود رقم مكرر
+          let existingPhone = null;
+          if(window.storage && window.storage.getPhoneByNumber){
+            existingPhone = await window.storage.getPhoneByNumber(phone_number);
+          } else {
+            const phones = JSON.parse(localStorage.getItem('phones') || '[]');
+            existingPhone = phones.find(p => p.phone_number === phone_number);
+          }
+          
+          if (existingPhone) {
+            console.warn(`⚠️ الرقم ${phone_number} مستخدم بالفعل، جاري توليد رقم جديد...`);
+            // انتظر قليلاً قبل المحاولة التالية
+            await new Promise(resolve => setTimeout(resolve, 100));
+          } else {
+            break; // رقم فريد، اخرج من الحلقة
+          }
+        } while (attempts < maxAttempts);
+        
+        if (attempts >= maxAttempts) {
+          alert('❌ تعذر توليد رقم هاتف فريد بعد عدة محاولات. يرجى المحاولة مرة أخرى.');
+          setSubmitButtonState(false);
+          return false;
+        }
         const purchase_price = parseArabicNumber(document.getElementById('purchase_price').value);
         const selling_price = parseArabicNumber(document.getElementById('selling_price').value);
 

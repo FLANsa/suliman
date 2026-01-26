@@ -23,7 +23,8 @@ class PhoneManager {
             }
 
             // Check for existing serial number
-            if (this.storage.getPhoneBySerial(phoneData.serial_number)) {
+            const existingSerial = await this.storage.getPhoneBySerial(phoneData.serial_number);
+            if (existingSerial) {
                 return { success: false, error: 'الرقم التسلسلي موجود بالفعل في النظام' };
             }
 
@@ -34,12 +35,30 @@ class PhoneManager {
                 if (!phoneNumber) {
                     return { success: false, error: 'باركود غير صحيح' };
                 }
-                if (this.storage.getPhoneByNumber(phoneNumber)) {
+                const existingPhoneByNumber = await this.storage.getPhoneByNumber(phoneNumber);
+                if (existingPhoneByNumber) {
                     return { success: false, error: `الهاتف برقم ${phoneNumber} موجود بالفعل في النظام` };
                 }
             } else {
                 try {
-                    phoneNumber = IDUtils.generateUniquePhoneNumber(this.storage.getPhones());
+                    // توليد رقم فريد مع التحقق من التكرار
+                    let attempts = 0;
+                    const maxAttempts = 10;
+                    do {
+                        const existingPhones = await this.storage.getPhones();
+                        phoneNumber = IDUtils.generateUniquePhoneNumber(existingPhones);
+                        // التحقق من عدم وجود رقم مكرر (race condition protection)
+                        const existingPhoneByNumber = await this.storage.getPhoneByNumber(phoneNumber);
+                        if (!existingPhoneByNumber) {
+                            break; // رقم فريد، اخرج من الحلقة
+                        }
+                        attempts++;
+                        console.warn(`⚠️ الرقم ${phoneNumber} مستخدم بالفعل، جاري توليد رقم جديد...`);
+                    } while (attempts < maxAttempts);
+                    
+                    if (attempts >= maxAttempts) {
+                        return { success: false, error: 'تعذر توليد رقم هاتف فريد بعد عدة محاولات' };
+                    }
                 } catch (error) {
                     return { success: false, error: error.message };
                 }
@@ -95,7 +114,8 @@ class PhoneManager {
      */
     async updatePhone(phoneId, phoneData) {
         try {
-            const existingPhone = this.storage.getPhones().find(p => p.id === phoneId);
+            const phones = await this.storage.getPhones();
+            const existingPhone = phones.find(p => p.id === phoneId);
             if (!existingPhone) {
                 return { success: false, error: 'الهاتف غير موجود' };
             }
@@ -107,7 +127,7 @@ class PhoneManager {
             }
 
             // Check serial number uniqueness (excluding current phone)
-            const phoneWithSerial = this.storage.getPhoneBySerial(phoneData.serial_number);
+            const phoneWithSerial = await this.storage.getPhoneBySerial(phoneData.serial_number);
             if (phoneWithSerial && phoneWithSerial.id !== phoneId) {
                 return { success: false, error: 'الرقم التسلسلي موجود بالفعل في النظام' };
             }
@@ -166,19 +186,19 @@ class PhoneManager {
 
     /**
      * Get all phones
-     * @returns {Array} Array of phones
+     * @returns {Promise<Array>} Array of phones
      */
-    getAllPhones() {
-        return this.storage.getPhones();
+    async getAllPhones() {
+        return await this.storage.getPhones();
     }
 
     /**
      * Get phone by ID
      * @param {string} phoneId - Phone ID
-     * @returns {Object|null} Phone object or null
+     * @returns {Promise<Object|null>} Phone object or null
      */
-    getPhoneById(phoneId) {
-        const phones = this.storage.getPhones();
+    async getPhoneById(phoneId) {
+        const phones = await this.storage.getPhones();
         return phones.find(p => p.id === phoneId) || null;
     }
 
@@ -186,19 +206,19 @@ class PhoneManager {
      * Search phones
      * @param {string} searchTerm - Search term
      * @param {string} condition - Phone condition filter
-     * @returns {Array} Filtered phones
+     * @returns {Promise<Array>} Filtered phones
      */
-    searchPhones(searchTerm, condition = '') {
-        const phones = this.getAllPhones();
+    async searchPhones(searchTerm, condition = '') {
+        const phones = await this.getAllPhones();
         return SearchUtils.filterPhones(phones, searchTerm, condition);
     }
 
     /**
      * Get phone statistics
-     * @returns {Object} Statistics object
+     * @returns {Promise<Object>} Statistics object
      */
-    getPhoneStatistics() {
-        const phones = this.getAllPhones();
+    async getPhoneStatistics() {
+        const phones = await this.getAllPhones();
         const newPhones = phones.filter(p => p.condition === 'new');
         const usedPhones = phones.filter(p => p.condition === 'used');
 
@@ -217,10 +237,10 @@ class PhoneManager {
 
     /**
      * Get inventory summary by brand and model
-     * @returns {Object} Inventory summary
+     * @returns {Promise<Object>} Inventory summary
      */
-    getInventorySummary() {
-        const phones = this.getAllPhones();
+    async getInventorySummary() {
+        const phones = await this.getAllPhones();
         
         // Group by condition
         const phoneTypesSummary = {};
@@ -372,13 +392,13 @@ class PhoneManager {
             { success: false, error: 'فشل في إضافة الموديل' };
     }
 
-    deletePhoneType(brand, model) {
+    async deletePhoneType(brand, model) {
         if (!brand || !model) {
             return { success: false, error: 'يرجى اختيار العلامة التجارية والموديل' };
         }
 
         // Check if any phones are using this type
-        const phones = this.getAllPhones();
+        const phones = await this.getAllPhones();
         const phonesUsingType = phones.filter(p => p.brand === brand && p.model === model);
         
         if (phonesUsingType.length > 0) {

@@ -1,6 +1,6 @@
 /**
  * Barcode Generation and Management
- * ياسر للاتصالات - Phone Store Management System
+ * مهند للاتصالات - Phone Store Management System
  */
 
 class BarcodeGenerator {

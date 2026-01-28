@@ -1,27 +1,27 @@
-# ياسر للاتصالات - Environment Variables
+# مهند للاتصالات - Environment Variables
 # متغيرات البيئة لنظام إدارة متجر الجوالات
 
 # Firebase Configuration
-FIREBASE_API_KEY=AIzaSyCOxP_fOupA-OAyO4oxYe54ohZ8_YzS7zc
-FIREBASE_AUTH_DOMAIN=aldhahbi-7a93b.firebaseapp.com
-FIREBASE_PROJECT_ID=aldhahbi-7a93b
-FIREBASE_STORAGE_BUCKET=aldhahbi-7a93b.firebasestorage.app
-FIREBASE_MESSAGING_SENDER_ID=392213757842
-FIREBASE_APP_ID=1:392213757842:web:510288ddc8ccd5d7e48b4b
-FIREBASE_MEASUREMENT_ID=G-77EPVYFWPB
+FIREBASE_API_KEY=AIzaSyB-wt81KIvVCLgC2wBf7YiSfCFYPYJGYlc
+FIREBASE_AUTH_DOMAIN=suliman-18f0d.firebaseapp.com
+FIREBASE_PROJECT_ID=suliman-18f0d
+FIREBASE_STORAGE_BUCKET=suliman-18f0d.firebasestorage.app
+FIREBASE_MESSAGING_SENDER_ID=526420501789
+FIREBASE_APP_ID=1:526420501789:web:e907e054c41e9ac5e8edf4
+FIREBASE_MEASUREMENT_ID=G-BZX4S1R6Z9
 
 # Application Settings
 NODE_ENV=production
-APP_NAME=Yasser Communications
+APP_NAME=Mohannad Communications
 APP_VERSION=2.0.0
 APP_DESCRIPTION=نظام إدارة متجر الجوالات
 
 # Company Information
-COMPANY_NAME=ياسر للاتصالات
-COMPANY_NAME_EN=Yasser Communications
+COMPANY_NAME=مهند للاتصالات
+COMPANY_NAME_EN=Mohannad Communications
 COMPANY_ADDRESS=الرياض، المملكة العربية السعودية
-COMPANY_PHONE=0582222994
-COMPANY_EMAIL=support@yasser-communications.com
+COMPANY_PHONE=0557457612
+COMPANY_EMAIL=support@mohannad-communications.com
 
 # Database Settings
 DATABASE_TYPE=firestore

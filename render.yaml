@@ -1,23 +1,23 @@
 services:
   - type: static
-    name: yasser-communications
+    name: mohannad-communications
     buildCommand: ""
     staticPublishPath: ./
     envVars:
       - key: NODE_ENV
         value: production
       - key: APP_NAME
-        value: Yasser Communications
+        value: Mohannad Communications
       - key: APP_VERSION
         value: "2.0.0"
       - key: COMPANY_NAME
-        value: ياسر للاتصالات
+        value: مهند للاتصالات
       - key: COMPANY_NAME_EN
-        value: Yasser Communications
+        value: Mohannad Communications
       - key: COMPANY_ADDRESS
         value: الرياض، المملكة العربية السعودية
       - key: COMPANY_PHONE
-        value: "0582222994"
+        value: "0557457612"
       - key: COMPANY_EMAIL
         value: support@yasser-communications.com
       - key: DATABASE_TYPE

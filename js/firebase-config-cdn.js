@@ -1,17 +1,17 @@
-// Firebase Configuration for ياسر للاتصالات - CDN Version
-// إعدادات Firebase لمشروع ياسر للاتصالات - نسخة CDN
+// Firebase Configuration for مهند للاتصالات - CDN Version
+// إعدادات Firebase لمشروع مهند للاتصالات - نسخة CDN
 // مرتبط مع قاعدة البيانات: alsaab-9a1aa
 
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyCX6SGOZrP2Fs0bQug_H5mHdLwL2HLwxMg",
-  authDomain: "alsaab-9a1aa.firebaseapp.com",
-  projectId: "alsaab-9a1aa",
-  storageBucket: "alsaab-9a1aa.firebasestorage.app",
-  messagingSenderId: "287935376685",
-  appId: "1:287935376685:web:c3b9d0d4cf93e85fff77a4",
-  measurementId: "G-L2ZYLYZB2H"
+  apiKey: "AIzaSyB-wt81KIvVCLgC2wBf7YiSfCFYPYJGYlc",
+  authDomain: "suliman-18f0d.firebaseapp.com",
+  projectId: "suliman-18f0d",
+  storageBucket: "suliman-18f0d.firebasestorage.app",
+  messagingSenderId: "526420501789",
+  appId: "1:526420501789:web:e907e054c41e9ac5e8edf4",
+  measurementId: "G-BZX4S1R6Z9"
 };
 
 // Import the functions you need from the SDKs you need (CDN version)
@@ -42,5 +42,5 @@ console.log('📊 Firestore Database:', db);
 console.log('🔐 Authentication:', auth);
 console.log('📦 Storage:', storage);
 console.log('📈 Analytics:', analytics);
-console.log('✅ Connected to Firebase project: alsaab-9a1aa');
-console.log('✅ Database ready for ياسر للاتصالات');
+console.log('✅ Connected to Firebase project: suliman-18f0d');
+console.log('✅ Database ready for مهند للاتصالات');

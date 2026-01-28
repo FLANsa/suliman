@@ -1,6 +1,6 @@
 /**
  * Utility Functions
- * ياسر للاتصالات - Phone Store Management System
+ * مهند للاتصالات - Phone Store Management System
  */
 
 // Price Calculation Functions (VAT removed)

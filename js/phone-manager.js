@@ -1,6 +1,6 @@
 /**
  * Phone Management Module
- * ياسر للاتصالات - Phone Store Management System
+ * مهند للاتصالات - Phone Store Management System
  */
 
 class PhoneManager {

@@ -1,4 +1,4 @@
-# ياسر للاتصالات - نظام إدارة متجر الهواتف
+# مهند للاتصالات - نظام إدارة متجر الهواتف
 # Requirements for Render deployment
 
 # No external dependencies required for static site

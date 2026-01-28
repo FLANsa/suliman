@@ -4,13 +4,13 @@
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyALjSQ2TqrwCMHEz8DLfhBohdbUgqR04Lk",
-  authDomain: "ostora-aldhhabi.firebaseapp.com",
-  projectId: "ostora-aldhhabi",
-  storageBucket: "ostora-aldhhabi.firebasestorage.app",
-  messagingSenderId: "943553442606",
-  appId: "1:943553442606:web:250a0325b89b9f5b5600bf",
-  measurementId: "G-04HHQ5JEJE"
+  apiKey: "AIzaSyB-wt81KIvVCLgC2wBf7YiSfCFYPYJGYlc",
+  authDomain: "suliman-18f0d.firebaseapp.com",
+  projectId: "suliman-18f0d",
+  storageBucket: "suliman-18f0d.firebasestorage.app",
+  messagingSenderId: "526420501789",
+  appId: "1:526420501789:web:e907e054c41e9ac5e8edf4",
+  measurementId: "G-BZX4S1R6Z9"
 };
 
 // Import the functions you need from the SDKs you need

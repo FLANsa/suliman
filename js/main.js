@@ -1,6 +1,6 @@
 /**
  * Main Application Entry Point
- * ياسر للاتصالات - Phone Store Management System
+ * مهند للاتصالات - Phone Store Management System
  */
 
 // Global application state

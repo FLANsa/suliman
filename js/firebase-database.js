@@ -1,5 +1,5 @@
-// Firebase Database Manager for ياسر للاتصالات
-// مرتبط مع قاعدة البيانات Firebase: alsaab-9a1aa
+// Firebase Database Manager for مهند للاتصالات
+// مرتبط مع قاعدة البيانات Firebase: suliman-18f0d
 import { 
   collection, 
   doc, 
@@ -18,14 +18,14 @@ import {
 class FirebaseDatabase {
   constructor() {
     // استخدام قاعدة البيانات المربوطة من firebase-config.js
-    // قاعدة البيانات: alsaab-9a1aa
+    // قاعدة البيانات: suliman-18f0d
     this.db = window.firebaseDB;
     this.auth = window.firebaseAuth;
     
     if (!this.db) {
       console.error('❌ Firebase Database not initialized! Make sure firebase-config.js is loaded first.');
     } else {
-      console.log('✅ Firebase Database Manager connected to: alsaab-9a1aa');
+      console.log('✅ Firebase Database Manager connected to: suliman-18f0d');
     }
   }
 

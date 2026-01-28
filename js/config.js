@@ -1,13 +1,13 @@
 /**
  * Configuration and Constants
- * ياسر للاتصالات - Phone Store Management System
+ * مهند للاتصالات - Phone Store Management System
  */
 
 const CONFIG = {
     COMPANY_INFO: {
-        name: "ياسر للاتصالات",
+        name: "مهند للاتصالات",
         address: "الرياض، المملكة العربية السعودية",
-        phone: "0582222994"
+        phone: "0557457612"
     },
     STORAGE_KEYS: {
         PHONES: 'phone_store_phones',

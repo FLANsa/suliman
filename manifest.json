@@ -1,0 +1,27 @@
+{
+  "name": "مهند للاتصالات",
+  "short_name": "مهند",
+  "description": "نظام إدارة متجر الهواتف - مهند للاتصالات",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#2c3e50",
+  "background_color": "#f8f9fa",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

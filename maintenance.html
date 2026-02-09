@@ -2,7 +2,12 @@
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2c3e50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="requires-role" content="admin">
   <title>نظام الصيانة — مهند للاتصالات</title>
     
@@ -25,6 +30,9 @@
             font-family: 'Cairo', sans-serif; 
             background-color: #f8f9fa; 
             padding-top: 70px; 
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
         }
         .navbar { 
             background-color: #2c3e50; 
@@ -33,6 +41,7 @@
             width: 100%; 
             z-index: 1030; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding-top: env(safe-area-inset-top);
         }
         .navbar-brand, .nav-link { color: white !important; }
         .card { 

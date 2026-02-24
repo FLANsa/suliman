@@ -548,11 +548,8 @@
       console.log('⚠️ Firebase غير متاح، استخدام localStorage');
     }
 
-    // تحديث ملخص المخزون
+    // تحديث ملخص المخزون (مرة واحدة عند فتح الصفحة فقط)
     await updateInventorySummary();
-
-    // تحديث البيانات كل 10 ثوانِ
-    setInterval(updateInventorySummary, 10000);
   });
 </script>
 

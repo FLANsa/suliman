@@ -188,7 +188,9 @@ class FirebaseStorageManager {
 
   async getPhoneByNumber(phoneNumber) {
     const phones = await this.getPhones();
-    return phones.find(p => p.phone_number === phoneNumber);
+    const norm = (v) => { const n = parseInt(v, 10); return (!isNaN(n) ? String(n) : String(v || '').trim()); };
+    const key = norm(phoneNumber);
+    return phones.find(p => norm(p.phone_number) === key);
   }
 
   async getPhoneBySerial(serialNumber) {

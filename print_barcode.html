@@ -59,6 +59,13 @@
         </div>
       </div>
       <div class="card-body">
+        <div id="no-phone-message" class="no-print" style="display:none; margin-bottom:1rem; padding:1rem; background:#fff3cd; border-radius:8px; border:1px solid #ffc107;">
+          <p style="margin:0 0 0.5rem 0;">لم يُحدد رقم جهاز. يرجى فتح هذه الصفحة من صفحة الهاتف (زر طباعة الباركود) أو إدخال رقم الجهاز أدناه لطباعة ملصق مؤقت.</p>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input type="text" id="manual-phone-number" placeholder="رقم الجهاز" style="padding:8px 12px; border:1px solid #ddd; border-radius:6px; width:120px;">
+            <button type="button" id="btnApplyManualNumber" class="btn btn-primary">عرض الملصق</button>
+          </div>
+        </div>
         <div class="sticker-preview">
           <div id="sticker" class="sticker">
             <div class="shop">مهند للاتصالات</div>
@@ -241,7 +248,7 @@
       }
     }
 
-    // No ?phone_number= : try lastAddedPhone directly (user came here manually after adding)
+    // No ?phone_number= : try lastAddedPhone (user came here right after adding a phone)
     try{
       const last = JSON.parse(localStorage.getItem('lastAddedPhone')||'null');
       if(last){
@@ -250,16 +257,30 @@
       }
     }catch{}
 
-    // Finally, generate a new label if nothing provided
-    const generated = (() => {
-      let last = localStorage.getItem('lastDeviceNumber')||'0';
-      const next = (parseInt(last,10)+1); localStorage.setItem('lastDeviceNumber', String(next));
-      return String(next).padStart(6,'0');
-    })();
-    fillSticker({ phone_number: generated, memory:'32GB', battery:'100' });
+    // لا توليد رقم جديد من localStorage (كان يسبب فجوات وتداخل). عرض رسالة وإدخال يدوي.
+    const msgEl = document.getElementById('no-phone-message');
+    if(msgEl) msgEl.style.display = 'block';
+    document.getElementById('phone-number').textContent = '-';
+    document.getElementById('battery-level').textContent = '-';
+    document.getElementById('phone-memory').textContent = '-';
+    generateBarcode('');
   }
 
-  document.addEventListener('DOMContentLoaded', loadPhoneData);
+  function showManualSticker(){
+    const input = document.getElementById('manual-phone-number');
+    const pn = (input && input.value && String(input.value).trim()) || '';
+    if(!pn){
+      alert('يرجى إدخال رقم الجهاز.');
+      return;
+    }
+    fillSticker({ phone_number: pn, memory: '-', battery: '-' });
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    loadPhoneData();
+    document.getElementById('btnApplyManualNumber')?.addEventListener('click', showManualSticker);
+    document.getElementById('manual-phone-number')?.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); showManualSticker(); } });
+  });
   btnDownload?.addEventListener('click', (e)=>{ e.preventDefault(); downloadPdf(); });
   btnPrint?.addEventListener('click', (e)=>{ e.preventDefault(); printPdf(); });
 })();

@@ -12,7 +12,8 @@ import {
   where, 
   orderBy,
   onSnapshot,
-  serverTimestamp 
+  serverTimestamp,
+  runTransaction
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
 class FirebaseDatabase {
@@ -30,14 +31,84 @@ class FirebaseDatabase {
   }
 
   // ===== إدارة الهواتف =====
+
+  /**
+   * يُرجع الرقم التالي الفريد لرقم الباركود (phone_number) من عداد في Firebase.
+   * يمنع التكرار بين الأجهزة والتبويبات.
+   * @returns {Promise<string>} رقم الباركود كسلسلة (مثل "1", "2")
+   */
+  async getNextPhoneNumber() {
+    const counterRef = doc(this.db, 'counters', 'phoneNumber');
+    const counterSnap = await getDoc(counterRef);
+
+    if (counterSnap.exists()) {
+      return await runTransaction(this.db, async (transaction) => {
+        const snap = await transaction.get(counterRef);
+        const current = snap.data().lastPhoneNumber || 0;
+        const next = current + 1;
+        if (next > 100000) throw new Error('تم الوصول للحد الأقصى من أرقام الباركود (100000)');
+        transaction.update(counterRef, { lastPhoneNumber: next });
+        return String(next);
+      });
+    }
+
+    // تهيئة العداد من أقصى رقم موجود في الهواتف
+    const phones = await this.getPhones();
+    let maxN = 0;
+    phones.forEach((p) => {
+      const n = parseInt(p.phone_number, 10);
+      if (!isNaN(n) && n > maxN) maxN = n;
+    });
+    const next = maxN + 1;
+
+    return await runTransaction(this.db, async (transaction) => {
+      const snap = await transaction.get(counterRef);
+      if (!snap.exists()) {
+        transaction.set(counterRef, { lastPhoneNumber: next });
+        return String(next);
+      }
+      const current = snap.data().lastPhoneNumber || 0;
+      const nextVal = current + 1;
+      if (nextVal > 100000) throw new Error('تم الوصول للحد الأقصى من أرقام الباركود (100000)');
+      transaction.update(counterRef, { lastPhoneNumber: nextVal });
+      return String(nextVal);
+    });
+  }
+
+  /**
+   * التحقق من عدم وجود هاتف بنفس phone_number (مقارنة متوافقة مع النص والعدد).
+   */
+  async phoneNumberExists(phoneNumber) {
+    const str = String(phoneNumber || '').trim();
+    const num = parseInt(str, 10);
+    const phonesRef = collection(this.db, 'phones');
+    const byStr = query(phonesRef, where('phone_number', '==', str));
+    const snapStr = await getDocs(byStr);
+    if (!snapStr.empty) return true;
+    if (!isNaN(num)) {
+      const byNum = query(phonesRef, where('phone_number', '==', num));
+      const snapNum = await getDocs(byNum);
+      if (!snapNum.empty) return true;
+    }
+    return false;
+  }
+
   async addPhone(phoneData) {
     try {
-      const docRef = await addDoc(collection(this.db, 'phones'), {
-        ...phoneData,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
-      console.log('✅ Phone added with ID:', docRef.id);
+      const pnRaw = phoneData.phone_number;
+      let pn = '';
+      if (pnRaw != null && pnRaw !== '') {
+        const num = parseInt(String(pnRaw).trim(), 10);
+        pn = !isNaN(num) ? String(num) : String(pnRaw).trim();
+      }
+      if (!pn) throw new Error('رقم الباركود مطلوب');
+
+      const exists = await this.phoneNumberExists(pn);
+      if (exists) throw new Error('رقم الباركود مستخدم بالفعل. الرقم: ' + pn);
+
+      const dataToSave = { ...phoneData, phone_number: pn, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+      const docRef = await addDoc(collection(this.db, 'phones'), dataToSave);
+      console.log('✅ Phone added with ID:', docRef.id, 'phone_number:', pn);
       return docRef.id;
     } catch (error) {
       console.error('❌ Error adding phone:', error);

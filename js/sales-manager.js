@@ -1,6 +1,6 @@
 /**
  * Sales Management Module
- * مهند للاتصالات - Phone Store Management System
+ * سليمان للاتصالات - Phone Store Management System
  */
 
 class SalesManager {

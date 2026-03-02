@@ -1,4 +1,4 @@
-# مهند للاتصالات - نظام إدارة متجر الجوالات
+# سليمان للاتصالات - نظام إدارة متجر الجوالات
 
 نظام متكامل لإدارة متجر الهواتف المحمولة الجديدة والمستعملة باللغة العربية.
 
@@ -35,12 +35,12 @@
 2. **اضغط على "New +" ثم "Static Site"**
 3. **اتصل بـ GitHub:**
    - اختر "Build and deploy from a Git repository"
-   - اختر مستودع `yasser-communications`
+   - اختر مستودع `suliman`
    - اختر الفرع `main`
 
 4. **إعدادات النشر:**
    ```
-   Name: yasser-communications
+   Name: suliman
    Branch: main
    Root Directory: ./
    Build Command: (اتركه فارغ)
@@ -56,7 +56,7 @@
 ```yaml
 services:
   - type: static
-    name: yasser-communications
+    name: suliman
     buildCommand: ""
     staticPublishPath: ./
     envVars:
@@ -142,8 +142,8 @@ services:
 
 ```bash
 # استنساخ المشروع
-git clone https://github.com/YOUR_USERNAME/yasser-communications.git
-cd yasser-communications
+git clone https://github.com/YOUR_USERNAME/suliman.git
+cd suliman
 
 # تشغيل الخادم المحلي
 python3 -m http.server 8000
@@ -155,7 +155,7 @@ npx http-server -p 8000
 ## 📞 الدعم
 
 للدعم التقني أو الاستفسارات:
-- **GitHub Issues**: [إنشاء مشكلة](https://github.com/YOUR_USERNAME/yasser-communications/issues)
+- **GitHub Issues**: [إنشاء مشكلة](https://github.com/YOUR_USERNAME/suliman/issues)
 - **Email**: support@blackfingerprint.com
 
 ## 📄 الترخيص

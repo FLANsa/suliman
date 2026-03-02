@@ -1,25 +1,25 @@
 services:
   - type: static
-    name: mohannad-communications
+    name: suliman-communications
     buildCommand: ""
     staticPublishPath: ./
     envVars:
       - key: NODE_ENV
         value: production
       - key: APP_NAME
-        value: Mohannad Communications
+        value: Suliman Communications
       - key: APP_VERSION
         value: "2.0.0"
       - key: COMPANY_NAME
-        value: مهند للاتصالات
+        value: سليمان للاتصالات
       - key: COMPANY_NAME_EN
-        value: Mohannad Communications
+        value: Suliman Communications
       - key: COMPANY_ADDRESS
         value: الرياض، المملكة العربية السعودية
       - key: COMPANY_PHONE
         value: "0557457612"
       - key: COMPANY_EMAIL
-        value: support@yasser-communications.com
+        value: support@suliman-communications.com
       - key: DATABASE_TYPE
         value: firestore
       - key: DATABASE_COLLECTION_PHONES

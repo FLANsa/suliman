@@ -1,4 +1,4 @@
-# مهند للاتصالات - Environment Variables
+# سليمان للاتصالات - Environment Variables
 # متغيرات البيئة لنظام إدارة متجر الجوالات
 
 # Firebase Configuration
@@ -12,16 +12,16 @@ FIREBASE_MEASUREMENT_ID=G-BZX4S1R6Z9
 
 # Application Settings
 NODE_ENV=production
-APP_NAME=Mohannad Communications
+APP_NAME=Suliman Communications
 APP_VERSION=2.0.0
 APP_DESCRIPTION=نظام إدارة متجر الجوالات
 
 # Company Information
-COMPANY_NAME=مهند للاتصالات
-COMPANY_NAME_EN=Mohannad Communications
+COMPANY_NAME=سليمان للاتصالات
+COMPANY_NAME_EN=Suliman Communications
 COMPANY_ADDRESS=الرياض، المملكة العربية السعودية
 COMPANY_PHONE=0557457612
-COMPANY_EMAIL=support@mohannad-communications.com
+COMPANY_EMAIL=support@suliman-communications.com
 
 # Database Settings
 DATABASE_TYPE=firestore

@@ -1,5 +1,5 @@
-// Firebase Configuration for مهند للاتصالات - CDN Version
-// إعدادات Firebase لمشروع مهند للاتصالات - نسخة CDN
+// Firebase Configuration for سليمان للاتصالات - CDN Version
+// إعدادات Firebase لمشروع سليمان للاتصالات - نسخة CDN
 // مرتبط مع قاعدة البيانات: alsaab-9a1aa
 
 // Your web app's Firebase configuration
@@ -43,4 +43,4 @@ console.log('🔐 Authentication:', auth);
 console.log('📦 Storage:', storage);
 console.log('📈 Analytics:', analytics);
 console.log('✅ Connected to Firebase project: suliman-18f0d');
-console.log('✅ Database ready for مهند للاتصالات');
+console.log('✅ Database ready for سليمان للاتصالات');

@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# مهند للاتصالات - نظام إدارة متجر الهواتف
+# سليمان للاتصالات - نظام إدارة متجر الهواتف
 # Render Deployment Script
 
-echo "🚀 Starting مهند للاتصالات Phone Store Management System..."
+echo "🚀 Starting سليمان للاتصالات Phone Store Management System..."
 
 # Check if Python is available
 if command -v python3 &> /dev/null; then

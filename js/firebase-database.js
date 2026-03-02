@@ -1,4 +1,4 @@
-// Firebase Database Manager for مهند للاتصالات
+// Firebase Database Manager for سليمان للاتصالات
 // مرتبط مع قاعدة البيانات Firebase: suliman-18f0d
 import { 
   collection, 

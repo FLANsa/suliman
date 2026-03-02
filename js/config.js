@@ -1,11 +1,11 @@
 /**
  * Configuration and Constants
- * مهند للاتصالات - Phone Store Management System
+ * سليمان للاتصالات - Phone Store Management System
  */
 
 const CONFIG = {
     COMPANY_INFO: {
-        name: "مهند للاتصالات",
+        name: "سليمان للاتصالات",
         address: "الرياض، المملكة العربية السعودية",
         phone: "0557457612"
     },

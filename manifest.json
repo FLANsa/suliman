@@ -1,7 +1,7 @@
 {
-  "name": "مهند للاتصالات",
-  "short_name": "مهند",
-  "description": "نظام إدارة متجر الهواتف - مهند للاتصالات",
+  "name": "سليمان للاتصالات",
+  "short_name": "سليمان",
+  "description": "نظام إدارة متجر الهواتف - سليمان للاتصالات",
   "start_url": "/index.html",
   "scope": "/",
   "display": "standalone",

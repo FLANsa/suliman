@@ -6,8 +6,8 @@
 
 1. اذهب إلى: https://github.com/new
 2. أدخل التفاصيل:
-   - **Repository name**: `yasser-communications` (أو `ياسر-للإتصالات`)
-   - **Description**: `ياسر للاتصالات - نظام إدارة متجر الجوالات`
+   - **Repository name**: `suliman` (أو `ياسر-للإتصالات`)
+   - **Description**: `سليمان للاتصالات - نظام إدارة متجر الجوالات`
    - **Visibility**: Public أو Private (حسب رغبتك)
    - **لا** تضع علامة على "Initialize this repository with a README"
 3. اضغط "Create repository"
@@ -15,7 +15,7 @@
 ### الطريقة الثانية: عبر GitHub CLI (إذا كان مثبت)
 
 ```bash
-gh repo create yasser-communications --public --description "ياسر للاتصالات - نظام إدارة متجر الجوالات"
+gh repo create suliman --public --description "سليمان للاتصالات - نظام إدارة متجر الجوالات"
 ```
 
 ## الخطوة 2: ربط المشروع بالمستودع الجديد
@@ -24,10 +24,10 @@ gh repo create yasser-communications --public --description "ياسر للاتص
 
 ```bash
 # تغيير remote إلى المستودع الجديد
-git remote set-url origin https://github.com/YOUR_USERNAME/yasser-communications.git
+git remote set-url origin https://github.com/YOUR_USERNAME/suliman.git
 
 # أو إذا كنت تستخدم SSH:
-# git remote set-url origin git@github.com:YOUR_USERNAME/yasser-communications.git
+# git remote set-url origin git@github.com:YOUR_USERNAME/suliman.git
 
 # رفع الكود
 git push -u origin main
@@ -42,9 +42,9 @@ git push -u origin main
 1. اذهب إلى: https://dashboard.render.com
 2. اضغط "New +" → "Static Site"
 3. اختر "Build and deploy from a Git repository"
-4. اختر المستودع: `yasser-communications`
+4. اختر المستودع: `suliman`
 5. أدخل الإعدادات:
-   - **Name**: `yasser-communications`
+   - **Name**: `suliman`
    - **Branch**: `main`
    - **Root Directory**: `.` (فارغ)
    - **Build Command**: (اتركه فارغ)
@@ -56,8 +56,8 @@ git push -u origin main
 
 ```
 NODE_ENV=production
-APP_NAME=Yasser Communications
-COMPANY_NAME=ياسر للاتصالات
+APP_NAME=Suliman Communications
+COMPANY_NAME=سليمان للاتصالات
 ```
 
 ### 3. Deploy
@@ -68,5 +68,5 @@ COMPANY_NAME=ياسر للاتصالات
 
 - تأكد من أن Firebase Storage مفعّل في مشروعك
 - تأكد من أن قواعد Firestore و Storage منشورة
-- بعد النشر، ستحصل على رابط مثل: `https://yasser-communications.onrender.com`
+- بعد النشر، ستحصل على رابط مثل: `https://suliman.onrender.com`
 

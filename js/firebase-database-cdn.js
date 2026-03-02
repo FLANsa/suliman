@@ -1,4 +1,4 @@
-// Firebase Database Manager for مهند للاتصالات - CDN Version
+// Firebase Database Manager for سليمان للاتصالات - CDN Version
 // مرتبط مع قاعدة البيانات Firebase: suliman-18f0d
 import { 
   collection, 

@@ -31,7 +31,9 @@
     .card-header h3 { margin:0; font-size:1.1rem; font-weight:700; }
     .card-body { padding:20px; }
     .sticker-preview{ border:2px dashed var(--muted); padding:20px; background:#f9f9f9; border-radius:10px; display:flex; justify-content:center; margin-bottom:18px; }
-    .sticker{ width:6cm; height:3cm; background:#fff; border:1px solid #ddd; box-sizing:border-box; display:flex; flex-direction:column; padding:0.2cm; gap:0.15cm; }
+    .sticker{ width:6cm; height:3cm; background:#fff; border:1px solid #ddd; box-sizing:border-box; display:flex; flex-direction:column; padding:0.2cm; gap:0; }
+    .phone-name { text-align:center; font-weight:600; font-size:3.2mm; line-height:1.05; margin-bottom:0; }
+    .sticker-barcode { margin-top:-0.03cm; }
     .row2{ display:flex; flex-direction:column; align-items:center; text-align:center; width:33.333%; line-height:1.1; }
     .label{ color:#222; font-weight:700; font-size:3.0mm; line-height:1.1; text-align:center; }
     .value{ color:#000; font-weight:800; font-size:4.2mm; line-height:1.05; text-align:center; }
@@ -69,6 +71,7 @@
         <div class="sticker-preview">
           <div id="sticker" class="sticker">
             <div class="shop">سليمان للاتصالات</div>
+            <div class="phone-name" id="phone-name">—</div>
             <div class="sticker-barcode"><canvas id="barcode-canvas"></canvas></div>
             <div class="rows">
               <div class="row2">
@@ -155,6 +158,9 @@
   function valuesFromPhone(phone){
     const phone_number = phone?.phone_number || phone?.barcode || phone?.id || '';
     const memory = phone?.phone_memory || phone?.memory || phone?.storage || '-';
+    const brand = phone?.brand || phone?.manufacturer || '';
+    const model = phone?.model || '';
+    const name = (brand || model) ? `${brand} ${model}`.trim() : '-';
     // Hide battery for new phones, show for used phones
     let battery = '-';
     if (phone?.condition === 'new') {
@@ -164,10 +170,14 @@
     } else if (phone?.age != null) {
       battery = String(phone.age); // تم الحفظ من صفحة المستعمل كـ battery_level أيضاً
     }
-    return { phone_number, memory, battery };
+    return { phone_number, memory, battery, name };
   }
 
-  function fillSticker({phone_number, memory, battery}){
+  function fillSticker({phone_number, memory, battery, name}){
+    const nameEl = document.getElementById('phone-name');
+    if (nameEl) {
+      nameEl.textContent = name || '-';
+    }
     document.getElementById('phone-number').textContent = phone_number || '-';
     document.getElementById('phone-memory').textContent = memory || '-';
     

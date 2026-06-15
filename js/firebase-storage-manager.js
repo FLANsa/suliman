@@ -105,6 +105,25 @@ class FirebaseStorageManager {
     }
   }
 
+  isQuotaExceeded(error) {
+    const text = [
+      error && error.code,
+      error && error.name,
+      error && error.message,
+      String(error || '')
+    ].filter(Boolean).join(' ').toLowerCase();
+
+    return text.includes('quota') || text.includes('resource-exhausted');
+  }
+
+  getLocalPhones() {
+    return this.getItem(CONFIG.STORAGE_KEYS.PHONES, []);
+  }
+
+  setLocalPhones(phones) {
+    return this.setItem(CONFIG.STORAGE_KEYS.PHONES, phones);
+  }
+
   /**
    * Phone management
    */
@@ -113,6 +132,7 @@ class FirebaseStorageManager {
       try {
         return await this.firebaseDB.getPhones();
       } catch (error) {
+        this.lastFirebaseError = error;
         console.error('Error getting phones from Firebase:', error);
         return this.getItem(CONFIG.STORAGE_KEYS.PHONES, []);
       }
@@ -131,10 +151,12 @@ class FirebaseStorageManager {
   async addPhone(phone) {
     if (this.isFirebaseAvailable) {
       try {
+        this.lastFirebaseError = null;
         phone.date_added = new Date();
         const phoneId = await this.firebaseDB.addPhone(phone);
         return phoneId;
       } catch (error) {
+        this.lastFirebaseError = error;
         console.error('Error adding phone to Firebase:', error);
         return false;
       }
@@ -146,6 +168,23 @@ class FirebaseStorageManager {
     phone.date_added = new Date().toISOString();
     phones.push(phone);
     return this.setPhones(phones);
+  }
+
+  async addPhoneDirect(phone) {
+    if (this.isFirebaseAvailable && this.firebaseDB && typeof this.firebaseDB.addPhoneDirect === 'function') {
+      try {
+        this.lastFirebaseError = null;
+        phone.date_added = new Date();
+        const phoneId = await this.firebaseDB.addPhoneDirect(phone);
+        return phoneId;
+      } catch (error) {
+        this.lastFirebaseError = error;
+        console.error('Error adding phone directly to Firebase:', error);
+        return false;
+      }
+    }
+
+    return this.addPhone(phone);
   }
 
   async updatePhone(phoneId, updatedPhone) {

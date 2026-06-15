@@ -93,10 +93,10 @@ class FirebaseDatabase {
     return false;
   }
 
-  async addPhone(phoneData) {
-    try {
-      const pnRaw = phoneData.phone_number;
-      let pn = '';
+	  async addPhone(phoneData) {
+	    try {
+	      const pnRaw = phoneData.phone_number;
+	      let pn = '';
       if (pnRaw != null && pnRaw !== '') {
         const num = parseInt(String(pnRaw).trim(), 10);
         pn = !isNaN(num) ? String(num) : String(pnRaw).trim();
@@ -112,11 +112,31 @@ class FirebaseDatabase {
       return docRef.id;
     } catch (error) {
       console.error('❌ Error adding phone:', error);
-      throw error;
-    }
-  }
+	      throw error;
+	    }
+	  }
 
-  async getPhones() {
+	  async addPhoneDirect(phoneData) {
+	    try {
+	      const pnRaw = phoneData.phone_number;
+	      let pn = '';
+	      if (pnRaw != null && pnRaw !== '') {
+	        const num = parseInt(String(pnRaw).trim(), 10);
+	        pn = !isNaN(num) ? String(num) : String(pnRaw).trim();
+	      }
+	      if (!pn) throw new Error('رقم الباركود مطلوب');
+
+	      const dataToSave = { ...phoneData, phone_number: pn, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
+	      const docRef = await addDoc(collection(this.db, 'phones'), dataToSave);
+	      console.log('✅ Phone added directly with ID:', docRef.id, 'phone_number:', pn);
+	      return docRef.id;
+	    } catch (error) {
+	      console.error('❌ Error adding phone directly:', error);
+	      throw error;
+	    }
+	  }
+
+	  async getPhones() {
     try {
       const phonesSnapshot = await getDocs(collection(this.db, 'phones'));
       const phones = [];

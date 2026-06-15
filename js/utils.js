@@ -134,6 +134,110 @@ const IDUtils = {
     }
 };
 
+// Offline Firebase quota fallback helpers
+const OfflineFallbackUtils = {
+    PHONES_KEY: 'phones',
+    OFFLINE_COUNTER_KEY: 'offline_phone_number_counter',
+    LAST_KNOWN_COUNTER_KEY: 'last_known_phone_number_counter',
+
+    isQuotaExceeded(error) {
+        const text = [
+            error && error.code,
+            error && error.name,
+            error && error.message,
+            String(error || '')
+        ].filter(Boolean).join(' ').toLowerCase();
+
+        return text.includes('quota') || text.includes('resource-exhausted');
+    },
+
+    getLocalPhones() {
+        try {
+            const phones = JSON.parse(localStorage.getItem(this.PHONES_KEY) || '[]');
+            return Array.isArray(phones) ? phones : [];
+        } catch (error) {
+            console.error('Error reading local phones:', error);
+            return [];
+        }
+    },
+
+    setLocalPhones(phones) {
+        localStorage.setItem(this.PHONES_KEY, JSON.stringify(phones));
+    },
+
+    getLocalCounter() {
+        const stored = parseInt(localStorage.getItem(this.OFFLINE_COUNTER_KEY) || '0', 10);
+        return !isNaN(stored) ? stored : 0;
+    },
+
+    setLocalCounter(value) {
+        localStorage.setItem(this.OFFLINE_COUNTER_KEY, String(value));
+    },
+
+    numericPhoneNumber(value) {
+        const parsed = parseInt(String(value || '').replace(/\D/g, ''), 10);
+        return !isNaN(parsed) ? parsed : 0;
+    },
+
+    reserveLocalPhoneNumber(extraPhones = []) {
+        const phones = this.getLocalPhones().concat(Array.isArray(extraPhones) ? extraPhones : []);
+        const usedNumbers = new Set(
+            phones
+                .map(phone => this.numericPhoneNumber(phone && phone.phone_number))
+                .filter(number => number > 0)
+        );
+
+        const maxExisting = usedNumbers.size > 0 ? Math.max(...Array.from(usedNumbers)) : 0;
+        const lastKnown = parseInt(localStorage.getItem(this.LAST_KNOWN_COUNTER_KEY) || '0', 10);
+        const fallbackCounter = this.getLocalCounter();
+        const safeFallbackCounter = fallbackCounter > 0 && fallbackCounter <= Math.max(maxExisting + 100, 100000) ? fallbackCounter : 0;
+        let next = Math.max(maxExisting, !isNaN(lastKnown) ? lastKnown : 0, safeFallbackCounter);
+        do {
+            next += 1;
+        } while (usedNumbers.has(next));
+
+        this.setLocalCounter(next);
+        localStorage.setItem(this.LAST_KNOWN_COUNTER_KEY, String(next));
+        return String(next);
+    },
+
+    savePhoneLocally(phoneData, editingPhoneId = null) {
+        const phones = this.getLocalPhones();
+        const now = new Date().toISOString();
+        const localPhone = {
+            ...phoneData,
+            firebase_sync_status: 'pending',
+            firebase_sync_reason: 'quota_exceeded',
+            offline_saved_at: now,
+            updated_at: now
+        };
+
+        if (editingPhoneId) {
+            const index = phones.findIndex(phone =>
+                phone.id === editingPhoneId || phone.phone_number === editingPhoneId
+            );
+
+            if (index !== -1) {
+                phones[index] = { ...phones[index], ...localPhone };
+            } else {
+                phones.push({
+                    ...localPhone,
+                    id: editingPhoneId || `local-${Date.now()}`
+                });
+            }
+        } else {
+            localPhone.id = localPhone.id || `local-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            localPhone.date_added = localPhone.date_added || now;
+            phones.push(localPhone);
+        }
+
+        this.setLocalPhones(phones);
+        localStorage.setItem('lastAddedPhone', JSON.stringify(localPhone));
+        return localPhone.id || localPhone.phone_number;
+    }
+};
+window.OfflineFallbackUtils = OfflineFallbackUtils;
+
 // Validation Utilities
 const ValidationUtils = {
     /**

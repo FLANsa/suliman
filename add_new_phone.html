@@ -183,10 +183,10 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   
   <!-- Firebase -->
-  <script type="module" src="js/firebase-config-cdn.js"></script>
-  <script type="module" src="js/firebase-database-cdn.js"></script>
-  <script type="module" src="js/firebase-storage-manager.js"></script>
-  <script src="js/utils.js"></script>
+	  <script type="module" src="js/firebase-config-cdn.js?v=20260615-counter-continuation"></script>
+	  <script type="module" src="js/firebase-database-cdn.js?v=20260615-counter-continuation"></script>
+	  <script type="module" src="js/firebase-storage-manager.js?v=20260615-counter-continuation"></script>
+	  <script src="js/utils.js?v=20260615-counter-continuation"></script>
 
   <script>
 
@@ -325,10 +325,102 @@
       }
       return 0;
     }
-    function naturalCompareDesc(a,b){ return naturalCompareAsc(b,a); }
-    async function addPhoneType(){
-      const selected=document.getElementById('brand').value;
-      let brand = (selected && selected!=='other')?selected:prompt('أدخل اسم العلامة التجارية:');
+	    function naturalCompareDesc(a,b){ return naturalCompareAsc(b,a); }
+	    const OFFLINE_PHONE_COUNTER_KEY = 'offline_phone_number_counter';
+	    const LAST_KNOWN_PHONE_COUNTER_KEY = 'last_known_phone_number_counter';
+
+	    function isQuotaExceededError(error){
+	      const text = [
+	        error && error.code,
+	        error && error.name,
+	        error && error.message,
+	        String(error || '')
+	      ].filter(Boolean).join(' ').toLowerCase();
+	      return text.includes('quota') || text.includes('resource-exhausted');
+	    }
+
+	    function getLocalPhones(){
+	      try {
+	        const phones = JSON.parse(localStorage.getItem('phones') || '[]');
+	        return Array.isArray(phones) ? phones : [];
+	      } catch (error) {
+	        console.error('Error reading local phones:', error);
+	        return [];
+	      }
+	    }
+
+	    function setLocalPhones(phones){
+	      localStorage.setItem('phones', JSON.stringify(phones));
+	    }
+
+	    function numericPhoneNumber(value){
+	      const parsed = parseInt(String(value || '').replace(/\D/g, ''), 10);
+	      return !isNaN(parsed) ? parsed : 0;
+	    }
+
+	    async function reserveLocalPhoneNumber(){
+	      let phones = getLocalPhones();
+	      try {
+	        if (window.storage && window.storage.isFirebaseAvailable) {
+	          const firebasePhones = await window.storage.getPhones();
+	          if (Array.isArray(firebasePhones) && firebasePhones.length > 0) {
+	            phones = firebasePhones.concat(phones);
+	          }
+	        }
+	      } catch (error) {
+	        console.warn('Could not read Firebase phones for barcode fallback:', error);
+	      }
+
+	      const usedNumbers = new Set(
+	        phones
+	          .map(phone => numericPhoneNumber(phone && phone.phone_number))
+	          .filter(number => number > 0)
+	      );
+	      const maxExisting = usedNumbers.size > 0 ? Math.max(...Array.from(usedNumbers)) : 0;
+	      const lastKnown = parseInt(localStorage.getItem(LAST_KNOWN_PHONE_COUNTER_KEY) || '0', 10);
+	      const fallbackCounter = parseInt(localStorage.getItem(OFFLINE_PHONE_COUNTER_KEY) || '0', 10);
+	      const safeFallbackCounter = fallbackCounter > 0 && fallbackCounter <= Math.max(maxExisting + 100, 100000) ? fallbackCounter : 0;
+	      let next = Math.max(maxExisting, !isNaN(lastKnown) ? lastKnown : 0, !isNaN(safeFallbackCounter) ? safeFallbackCounter : 0);
+	      do {
+	        next += 1;
+	      } while (usedNumbers.has(next));
+	      localStorage.setItem(OFFLINE_PHONE_COUNTER_KEY, String(next));
+	      localStorage.setItem(LAST_KNOWN_PHONE_COUNTER_KEY, String(next));
+	      return String(next);
+	    }
+
+	    function savePhoneLocally(phoneData, editingPhoneId = null){
+	      const phones = getLocalPhones();
+	      const now = new Date().toISOString();
+	      const localPhone = {
+	        ...phoneData,
+	        firebase_sync_status: 'pending',
+	        firebase_sync_reason: 'quota_exceeded',
+	        offline_saved_at: now,
+	        updated_at: now
+	      };
+
+	      if (editingPhoneId) {
+	        const index = phones.findIndex(phone => phone.id === editingPhoneId || phone.phone_number === editingPhoneId);
+	        if (index !== -1) {
+	          phones[index] = { ...phones[index], ...localPhone };
+	        } else {
+	          phones.push({ ...localPhone, id: editingPhoneId || `local-${Date.now()}` });
+	        }
+	      } else {
+	        localPhone.id = localPhone.id || `local-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+	        localPhone.date_added = localPhone.date_added || now;
+	        phones.push(localPhone);
+	      }
+
+	      setLocalPhones(phones);
+	      localStorage.setItem('lastAddedPhone', JSON.stringify(localPhone));
+	      return localPhone.id || localPhone.phone_number;
+	    }
+
+	    async function addPhoneType(){
+	      const selected=document.getElementById('brand').value;
+	      let brand = (selected && selected!=='other')?selected:prompt('أدخل اسم العلامة التجارية:');
       if(!brand||!brand.trim()) return; brand=brand.trim();
       const model = prompt('أدخل اسم الموديل:'); if(!model||!model.trim()) return;
       try{
@@ -350,23 +442,36 @@
       }catch(e){ console.error(e); alert('❌ حدث خطأ في الحذف.'); }
     }
 
-    /** يُرجع الرقم التالي الفريد من Firebase إن وُجد، وإلا من localStorage (وضع عدم اتصال). */
-    async function getNextPhoneNumber(){
-      if (window.firebaseDatabase && typeof window.firebaseDatabase.getNextPhoneNumber === 'function') {
-        return await window.firebaseDatabase.getNextPhoneNumber();
-      }
-      let phones = [];
-      try {
-        if (window.storage && window.storage.isFirebaseAvailable) {
-          phones = await window.storage.getPhones();
+	    /** يُرجع الرقم التالي الفريد من Firebase إن وُجد، وإلا من localStorage (وضع عدم اتصال). */
+	    async function getNextPhoneNumber(){
+	      if (window.firebaseDatabase && typeof window.firebaseDatabase.getNextPhoneNumber === 'function') {
+	        try {
+	          const phoneNumber = await window.firebaseDatabase.getNextPhoneNumber();
+	          window.usingLocalPhoneNumberFallback = false;
+	          localStorage.setItem(LAST_KNOWN_PHONE_COUNTER_KEY, String(numericPhoneNumber(phoneNumber)));
+	          return phoneNumber;
+	        } catch (error) {
+	          if (isQuotaExceededError(error)) {
+	            console.warn('Firestore quota exceeded. Using local barcode fallback.', error);
+	            window.usingLocalPhoneNumberFallback = true;
+	            return await reserveLocalPhoneNumber();
+	          }
+	          throw error;
+	        }
+	      }
+	      let phones = [];
+	      try {
+	        if (window.storage && window.storage.isFirebaseAvailable) {
+	          phones = await window.storage.getPhones();
         } else {
           phones = JSON.parse(localStorage.getItem('phones') || '[]');
         }
-      } catch (e) {
-        phones = JSON.parse(localStorage.getItem('phones') || '[]');
-      }
-      return IDUtils.generateUniquePhoneNumber(phones);
-    }
+	      } catch (e) {
+	        phones = JSON.parse(localStorage.getItem('phones') || '[]');
+	      }
+	      window.usingLocalPhoneNumberFallback = !window.storage || !window.storage.isFirebaseAvailable;
+	      return IDUtils.generateUniquePhoneNumber(phones);
+	    }
 
     // متغير لتتبع حالة المعالجة
     let isProcessing = false;
@@ -467,56 +572,61 @@
           return false; 
         }
 
-        // handoff سريع للملصق
-        localStorage.setItem('lastAddedPhone', JSON.stringify(phoneData));
+	        // handoff سريع للملصق
+	        localStorage.setItem('lastAddedPhone', JSON.stringify(phoneData));
 
-        let savedOK=false;
-        
-        // التحقق من وجود معرف التعديل
-        if (window.editingPhoneId) {
-          console.log('🔄 تحديث الهاتف:', window.editingPhoneId);
-          phoneData.id = window.editingPhoneId;
-          
-          if(window.storage && window.storage.isFirebaseAvailable){
-            // تحديث في Firebase
-            savedOK = await window.storage.updatePhone(window.editingPhoneId, phoneData);
-          } else {
-            // تحديث في localStorage
-            const arr = JSON.parse(localStorage.getItem('phones')||'[]');
-            const index = arr.findIndex(p => p.id === window.editingPhoneId || p.phone_number === window.editingPhoneId);
-            if (index !== -1) {
-              arr[index] = { ...arr[index], ...phoneData };
-              localStorage.setItem('phones', JSON.stringify(arr));
-              savedOK = true;
-            }
-          }
-          
-          if(savedOK){
-            showAlert('success', 'تم تحديث الهاتف بنجاح!');
-            // إعادة توجيه إلى صفحة البحث
-            setTimeout(() => {
-              window.location.href = 'search.html';
-            }, 2000);
-            return true;
-          }
-        } else {
-          // إضافة هاتف جديد
-          if(window.storage && window.storage.isFirebaseAvailable){
-            const id = await window.storage.addPhone(phoneData);
-            savedOK = !!id;
-          }else{
-            const arr = JSON.parse(localStorage.getItem('phones')||'[]'); 
-            phoneData.id=Date.now().toString(); 
-            arr.push(phoneData);
-            localStorage.setItem('phones', JSON.stringify(arr)); 
-            savedOK=true;
-          }
-          
-          if(savedOK){
-            const shouldPrint = confirm('✅ تم إضافة الهاتف!\n\nهل تريد طباعة الباركود؟');
-            if(shouldPrint){ window.location.href = `print_barcode.html?phone_number=${encodeURIComponent(phoneData.phone_number)}`; }
-            return true;
-          }
+	        let savedOK=false;
+	        let savedLocally=false;
+	        
+	        // التحقق من وجود معرف التعديل
+	        if (window.editingPhoneId) {
+	          console.log('🔄 تحديث الهاتف:', window.editingPhoneId);
+	          phoneData.id = window.editingPhoneId;
+	          
+	          if(window.storage && window.storage.isFirebaseAvailable && !window.usingLocalPhoneNumberFallback){
+	            // تحديث في Firebase
+	            savedOK = await window.storage.updatePhone(window.editingPhoneId, phoneData);
+	          } else {
+	            // تحديث في localStorage
+	            savedOK = !!savePhoneLocally(phoneData, window.editingPhoneId);
+	            savedLocally = savedOK;
+	          }
+	          if(!savedOK && window.storage && window.storage.isFirebaseAvailable){
+	            savedOK = !!savePhoneLocally(phoneData, window.editingPhoneId);
+	            savedLocally = savedOK;
+	          }
+	          
+	          if(savedOK){
+	            showAlert(savedLocally ? 'warning' : 'success', savedLocally ? 'تم تحديث الهاتف محليًا بسبب نفاد كوتا Firebase.' : 'تم تحديث الهاتف بنجاح!');
+	            // إعادة توجيه إلى صفحة البحث
+	            setTimeout(() => {
+	              window.location.href = 'search.html';
+	            }, 2000);
+	            return true;
+	          }
+	        } else {
+	          // إضافة هاتف جديد
+	          if(window.storage && window.storage.isFirebaseAvailable && !window.usingLocalPhoneNumberFallback){
+	            const id = await window.storage.addPhone(phoneData);
+	            savedOK = !!id;
+	          }else if(window.storage && window.storage.isFirebaseAvailable && typeof window.storage.addPhoneDirect === 'function'){
+	            const id = await window.storage.addPhoneDirect(phoneData);
+	            savedOK = !!id;
+	            savedLocally = false;
+	          }else if(window.firebaseDatabase && typeof window.firebaseDatabase.addPhoneDirect === 'function'){
+	            const id = await window.firebaseDatabase.addPhoneDirect(phoneData);
+	            savedOK = !!id;
+	            savedLocally = false;
+	          }else{
+	            savedOK = !!savePhoneLocally(phoneData);
+	            savedLocally = savedOK;
+	          }
+	          
+	          if(savedOK){
+	            const shouldPrint = confirm((savedLocally ? '✅ تم إضافة الهاتف محليًا بسبب نفاد كوتا Firebase.' : '✅ تم إضافة الهاتف!') + '\n\nهل تريد طباعة الباركود؟');
+	            if(shouldPrint){ window.location.href = `print_barcode.html?phone_number=${encodeURIComponent(phoneData.phone_number)}`; }
+	            return true;
+	          }
         }
         alert('❌ تعذّر الحفظ'); 
         setSubmitButtonState(false);

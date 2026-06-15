@@ -30,10 +30,10 @@ class FirebaseDatabase {
   }
 
   // ===== إدارة الهواتف =====
-  async addPhone(phoneData) {
-    try {
-      const docRef = await addDoc(collection(this.db, 'phones'), {
-        ...phoneData,
+	  async addPhone(phoneData) {
+	    try {
+	      const docRef = await addDoc(collection(this.db, 'phones'), {
+	        ...phoneData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -41,11 +41,15 @@ class FirebaseDatabase {
       return docRef.id;
     } catch (error) {
       console.error('❌ Error adding phone:', error);
-      throw error;
-    }
-  }
+	      throw error;
+	    }
+	  }
 
-  async getPhones() {
+	  async addPhoneDirect(phoneData) {
+	    return this.addPhone(phoneData);
+	  }
+
+	  async getPhones() {
     try {
       const phonesSnapshot = await getDocs(collection(this.db, 'phones'));
       const phones = [];

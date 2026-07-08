@@ -14,6 +14,7 @@ import {
   onSnapshot,
   serverTimestamp,
   runTransaction,
+  setDoc,
   Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
 
@@ -1306,15 +1307,23 @@ class FirebaseDatabase {
       // التحقق من وجود فئات الأكسسوارات
       const existingCategories = await this.getAccessoryCategories();
       if (existingCategories.length === 0) {
+        // setDoc بمعرّف ثابت (name) بدل addDoc: إعادة التنفيذ المتزامنة من عدة
+        // تبويبات/أجهزة تكتب نفس المستندات ولا تُنشئ نسخاً مكررة
         for (const category of defaultCategories) {
-          await this.addAccessoryCategory(category);
+          await setDoc(doc(this.db, 'accessory_categories', category.name), {
+            ...category,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
         }
+        _cacheInvalidate('accessory_categories');
         console.log('✅ تم إضافة فئات الأكسسوارات الافتراضية');
       }
 
       console.log('✅ Default data initialized successfully');
     } catch (error) {
       console.error('❌ Error initializing default data:', error);
+      throw error; // حتى لا يُسجَّل نجاح التهيئة في الجلسة وهي فاشلة
     }
   }
 }

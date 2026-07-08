@@ -13,8 +13,63 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp,
-  runTransaction
+  runTransaction,
+  Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js';
+
+// ===== طبقة كاش للقراءات (لتقليل استهلاك حصة Firestore) =====
+// كاش في الذاكرة + sessionStorage (يبقى بين الصفحات في نفس التبويب)
+// الصلاحية 5 دقائق، وأي كتابة على مجموعة تُبطل كاشها فوراً.
+const FS_CACHE_TTL_MS = 5 * 60 * 1000;
+const FS_CACHE_PREFIX = 'fsCache:';
+const _memCache = {};
+
+// إعادة إحياء Firestore Timestamp بعد JSON (تفقد نوعها عند التخزين)
+function _reviveTimestamps(value) {
+  if (Array.isArray(value)) return value.map(_reviveTimestamps);
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value);
+    if (keys.length === 2 && typeof value.seconds === 'number' && typeof value.nanoseconds === 'number') {
+      return new Timestamp(value.seconds, value.nanoseconds);
+    }
+    const out = {};
+    for (const k of keys) out[k] = _reviveTimestamps(value[k]);
+    return out;
+  }
+  return value;
+}
+
+function _cacheGet(name) {
+  const mem = _memCache[name];
+  // نسخة سطحية حتى لا يفسد sort/splice في الصفحات محتوى الكاش المشترك
+  if (mem && Date.now() - mem.t < FS_CACHE_TTL_MS) {
+    return Array.isArray(mem.data) ? mem.data.slice() : mem.data;
+  }
+  try {
+    const raw = sessionStorage.getItem(FS_CACHE_PREFIX + name);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (Date.now() - parsed.t >= FS_CACHE_TTL_MS) return null;
+    const data = _reviveTimestamps(parsed.data);
+    _memCache[name] = { t: parsed.t, data };
+    return Array.isArray(data) ? data.slice() : data;
+  } catch (e) {
+    return null;
+  }
+}
+
+function _cacheSet(name, data) {
+  const entry = { t: Date.now(), data };
+  _memCache[name] = entry;
+  try {
+    sessionStorage.setItem(FS_CACHE_PREFIX + name, JSON.stringify(entry));
+  } catch (e) { /* sessionStorage ممتلئ أو غير متاح — الكاش في الذاكرة يكفي */ }
+}
+
+function _cacheInvalidate(name) {
+  delete _memCache[name];
+  try { sessionStorage.removeItem(FS_CACHE_PREFIX + name); } catch (e) {}
+}
 
 class FirebaseDatabase {
   constructor() {
@@ -108,6 +163,7 @@ class FirebaseDatabase {
 
       const dataToSave = { ...phoneData, phone_number: pn, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
       const docRef = await addDoc(collection(this.db, 'phones'), dataToSave);
+      _cacheInvalidate('phones');
       console.log('✅ Phone added with ID:', docRef.id, 'phone_number:', pn);
       return docRef.id;
     } catch (error) {
@@ -129,6 +185,7 @@ class FirebaseDatabase {
 	      const dataToSave = { ...phoneData, phone_number: pn, createdAt: serverTimestamp(), updatedAt: serverTimestamp() };
 	      const docRef = await addDoc(collection(this.db, 'phones'), dataToSave);
 	      console.log('✅ Phone added directly with ID:', docRef.id, 'phone_number:', pn);
+		      _cacheInvalidate('phones');
 	      return docRef.id;
 	    } catch (error) {
 	      console.error('❌ Error adding phone directly:', error);
@@ -138,12 +195,15 @@ class FirebaseDatabase {
 
 	  async getPhones() {
     try {
+      const cached = _cacheGet('phones');
+      if (cached) return cached;
       const phonesSnapshot = await getDocs(collection(this.db, 'phones'));
       const phones = [];
       phonesSnapshot.forEach((doc) => {
         phones.push({ id: doc.id, ...doc.data() });
       });
       console.log('📱 Retrieved phones:', phones.length);
+      _cacheSet('phones', phones);
       return phones;
     } catch (error) {
       console.error('❌ Error getting phones:', error);
@@ -157,6 +217,7 @@ class FirebaseDatabase {
         ...phoneData,
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('phones');
       console.log('✅ Phone updated:', phoneId);
     } catch (error) {
       console.error('❌ Error updating phone:', error);
@@ -167,6 +228,7 @@ class FirebaseDatabase {
   async deletePhone(phoneId) {
     try {
       await deleteDoc(doc(this.db, 'phones', phoneId));
+      _cacheInvalidate('phones');
       console.log('✅ Phone deleted:', phoneId);
     } catch (error) {
       console.error('❌ Error deleting phone:', error);
@@ -185,6 +247,7 @@ class FirebaseDatabase {
         updatedAt: serverTimestamp()
       });
       
+      _cacheInvalidate('accessories');
       console.log('✅ Firebase: تم إضافة الأكسسوار بنجاح! ID:', docRef.id);
       console.log('📂 Firebase: الفئة المحفوظة:', accessoryData.category);
       return docRef.id;
@@ -196,12 +259,15 @@ class FirebaseDatabase {
 
   async getAccessories() {
     try {
+      const cached = _cacheGet('accessories');
+      if (cached) return cached;
       const accessoriesSnapshot = await getDocs(collection(this.db, 'accessories'));
       const accessories = [];
       accessoriesSnapshot.forEach((doc) => {
         accessories.push({ id: doc.id, ...doc.data() });
       });
       console.log('🛍️ Retrieved accessories:', accessories.length);
+      _cacheSet('accessories', accessories);
       return accessories;
     } catch (error) {
       console.error('❌ Error getting accessories:', error);
@@ -215,6 +281,7 @@ class FirebaseDatabase {
         ...accessoryData,
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('accessories');
       console.log('✅ Accessory updated:', accessoryId);
     } catch (error) {
       console.error('❌ Error updating accessory:', error);
@@ -225,6 +292,7 @@ class FirebaseDatabase {
   async deleteAccessory(accessoryId) {
     try {
       await deleteDoc(doc(this.db, 'accessories', accessoryId));
+      _cacheInvalidate('accessories');
       console.log('✅ Accessory deleted:', accessoryId);
     } catch (error) {
       console.error('❌ Error deleting accessory:', error);
@@ -240,6 +308,7 @@ class FirebaseDatabase {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('sales');
       console.log('✅ Sale added with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -250,6 +319,8 @@ class FirebaseDatabase {
 
   async getSales() {
     try {
+      const cached = _cacheGet('sales');
+      if (cached) return cached;
       const salesSnapshot = await getDocs(
         query(collection(this.db, 'sales'), orderBy('createdAt', 'desc'))
       );
@@ -258,6 +329,7 @@ class FirebaseDatabase {
         sales.push({ id: doc.id, ...doc.data() });
       });
       console.log('💰 Retrieved sales:', sales.length);
+      _cacheSet('sales', sales);
       return sales;
     } catch (error) {
       console.error('❌ Error getting sales:', error);
@@ -284,6 +356,7 @@ class FirebaseDatabase {
         ...saleData,
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('sales');
       console.log('✅ Sale updated:', saleId);
     } catch (error) {
       console.error('❌ Error updating sale:', error);
@@ -294,6 +367,7 @@ class FirebaseDatabase {
   async deleteSale(saleId) {
     try {
       await deleteDoc(doc(this.db, 'sales', saleId));
+      _cacheInvalidate('sales');
       console.log('✅ Sale deleted:', saleId);
     } catch (error) {
       console.error('❌ Error deleting sale:', error);
@@ -309,6 +383,7 @@ class FirebaseDatabase {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('accessory_categories');
       console.log('✅ Category added with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -319,12 +394,15 @@ class FirebaseDatabase {
 
   async getAccessoryCategories() {
     try {
+      const cached = _cacheGet('accessory_categories');
+      if (cached) return cached;
       const categoriesSnapshot = await getDocs(collection(this.db, 'accessory_categories'));
       const categories = [];
       categoriesSnapshot.forEach((doc) => {
         categories.push({ id: doc.id, ...doc.data() });
       });
       console.log('📂 Retrieved categories:', categories.length);
+      _cacheSet('accessory_categories', categories);
       return categories;
     } catch (error) {
       console.error('❌ Error getting categories:', error);
@@ -345,6 +423,7 @@ class FirebaseDatabase {
       });
       
       await Promise.all(deletePromises);
+      _cacheInvalidate('accessory_categories');
       console.log('✅ Accessory category deleted:', categoryName);
       return true;
     } catch (error) {
@@ -361,6 +440,7 @@ class FirebaseDatabase {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('phone_types');
       console.log('✅ Phone type added with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -371,12 +451,15 @@ class FirebaseDatabase {
 
   async getPhoneTypes() {
     try {
+      const cached = _cacheGet('phone_types');
+      if (cached) return cached;
       const phoneTypesSnapshot = await getDocs(collection(this.db, 'phone_types'));
       const phoneTypes = [];
       phoneTypesSnapshot.forEach((doc) => {
         phoneTypes.push({ id: doc.id, ...doc.data() });
       });
       console.log('📱 Retrieved phone types:', phoneTypes.length);
+      _cacheSet('phone_types', phoneTypes);
       return phoneTypes;
     } catch (error) {
       console.error('❌ Error getting phone types:', error);
@@ -398,6 +481,7 @@ class FirebaseDatabase {
       });
       
       await Promise.all(deletePromises);
+      _cacheInvalidate('phone_types');
       console.log('✅ Phone type deleted:', brand, model);
       return true;
     } catch (error) {
@@ -504,6 +588,7 @@ class FirebaseDatabase {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('reps');
       console.log('✅ Rep added with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -514,12 +599,15 @@ class FirebaseDatabase {
 
   async getReps() {
     try {
+      const cached = _cacheGet('reps');
+      if (cached) return cached;
       const querySnapshot = await getDocs(collection(this.db, 'reps'));
       const reps = [];
       querySnapshot.forEach(doc => {
         reps.push({ id: doc.id, ...doc.data() });
       });
       console.log('✅ Reps loaded:', reps.length);
+      _cacheSet('reps', reps);
       return reps;
     } catch (error) {
       console.error('❌ Error getting reps:', error);
@@ -534,6 +622,7 @@ class FirebaseDatabase {
         ...repData,
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('reps');
       console.log('✅ Rep updated:', repId);
     } catch (error) {
       console.error('❌ Error updating rep:', error);
@@ -545,6 +634,7 @@ class FirebaseDatabase {
     try {
       const repRef = doc(this.db, 'reps', repId);
       await deleteDoc(repRef);
+      _cacheInvalidate('reps');
       console.log('✅ Rep deleted:', repId);
     } catch (error) {
       console.error('❌ Error deleting rep:', error);
@@ -562,6 +652,7 @@ class FirebaseDatabase {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('technicians');
       console.log('✅ Technician added with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -572,12 +663,15 @@ class FirebaseDatabase {
 
   async getTechnicians() {
     try {
+      const cached = _cacheGet('technicians');
+      if (cached) return cached;
       const querySnapshot = await getDocs(collection(this.db, 'technicians'));
       const technicians = [];
       querySnapshot.forEach(doc => {
         technicians.push({ id: doc.id, ...doc.data() });
       });
       console.log('✅ Technicians loaded:', technicians.length);
+      _cacheSet('technicians', technicians);
       return technicians;
     } catch (error) {
       console.error('❌ Error getting technicians:', error);
@@ -592,6 +686,7 @@ class FirebaseDatabase {
         ...techData,
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('technicians');
       console.log('✅ Technician updated:', techId);
     } catch (error) {
       console.error('❌ Error updating technician:', error);
@@ -603,6 +698,7 @@ class FirebaseDatabase {
     try {
       const techRef = doc(this.db, 'technicians', techId);
       await deleteDoc(techRef);
+      _cacheInvalidate('technicians');
       console.log('✅ Technician deleted:', techId);
     } catch (error) {
       console.error('❌ Error deleting technician:', error);
@@ -640,6 +736,7 @@ class FirebaseDatabase {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('maintenanceJobs');
       console.log('✅ Maintenance job added with ID:', docRef.id);
       console.log('💰 Calculated values - totalPartCost:', totalPartCost, 'profit:', profit, 'techCommission:', techCommission);
       return docRef.id;
@@ -651,168 +748,66 @@ class FirebaseDatabase {
 
   async getMaintenanceJobs(filters = {}) {
     try {
-      let q = collection(this.db, 'maintenanceJobs');
-      
-      // إذا كان هناك status و date range معاً، نحاول الاستعلام معاً أولاً
-      // وإذا فشل بسبب عدم وجود فهرس، نستخدم حل بديل
-      const hasStatusAndDateRange = filters.status && (filters.dateFrom || filters.dateTo);
-      
-      if (hasStatusAndDateRange) {
-        try {
-          // محاولة الاستعلام الكامل مع الفهرس
-          // ملاحظة: لا نستخدم repId في Firebase query لأن البحث يجب أن يشمل parts[]
-          if (filters.status) {
-            q = query(q, where('status', '==', filters.status));
-          }
-          
-          if (filters.techId) {
-            q = query(q, where('techId', '==', filters.techId));
-          }
-          
-          if (filters.dateFrom) {
-            q = query(q, where('visitDate', '>=', filters.dateFrom));
-          }
-          
-          if (filters.dateTo) {
-            q = query(q, where('visitDate', '<=', filters.dateTo));
-          }
-
-          const querySnapshot = await getDocs(q);
-          let jobs = [];
-          querySnapshot.forEach(doc => {
-            jobs.push({ id: doc.id, ...doc.data() });
-          });
-          
-          // فلترة المندوب يدوياً (للبحث في parts[] أيضاً)
-          if (filters.repId) {
-            jobs = jobs.filter(job => {
-              if (job.repId === filters.repId) return true;
-              if (job.parts && Array.isArray(job.parts)) {
-                return job.parts.some(part => part.repId === filters.repId);
-              }
-              return false;
-            });
-          }
-          
-          // ترتيب النتائج يدوياً دائماً
-          jobs.sort((a, b) => {
-            const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
-            const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
-            return dateB - dateA; // ترتيب تنازلي
-          });
-          
-          console.log('✅ Maintenance jobs loaded:', jobs.length);
-          return jobs;
-        } catch (indexError) {
-          // إذا فشل بسبب عدم وجود فهرس، نستخدم حل بديل
-          if (indexError.code === 'failed-precondition' || indexError.message.includes('index')) {
-            console.warn('⚠️ Index not ready, using fallback query method');
-            
-            // الحل البديل: جلب جميع الوظائف بالحالة المطلوبة ثم تصفية يدوياً
-            let fallbackQuery = collection(this.db, 'maintenanceJobs');
-            if (filters.status) {
-              fallbackQuery = query(fallbackQuery, where('status', '==', filters.status));
-            }
-            
-            const fallbackSnapshot = await getDocs(fallbackQuery);
-            const allJobs = [];
-            fallbackSnapshot.forEach(doc => {
-              allJobs.push({ id: doc.id, ...doc.data() });
-            });
-            
-            // تصفية يدوياً حسب النطاق الزمني
-            let filteredJobs = allJobs;
-            
-            if (filters.dateFrom) {
-              const dateFrom = filters.dateFrom instanceof Date ? filters.dateFrom : new Date(filters.dateFrom);
-              filteredJobs = filteredJobs.filter(job => {
-                const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
-                return jobDate >= dateFrom;
-              });
-            }
-            
-            if (filters.dateTo) {
-              const dateTo = filters.dateTo instanceof Date ? filters.dateTo : new Date(filters.dateTo);
-              filteredJobs = filteredJobs.filter(job => {
-                const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
-                return jobDate <= dateTo;
-              });
-            }
-            
-            if (filters.repId) {
-              filteredJobs = filteredJobs.filter(job => {
-                // البحث في الهيكل القديم (repId)
-                if (job.repId === filters.repId) return true;
-                // البحث في الهيكل الجديد (parts[].repId)
-                if (job.parts && Array.isArray(job.parts)) {
-                  return job.parts.some(part => part.repId === filters.repId);
-                }
-                return false;
-              });
-            }
-            
-            if (filters.techId) {
-              filteredJobs = filteredJobs.filter(job => job.techId === filters.techId);
-            }
-            
-            // ترتيب النتائج يدوياً
-            filteredJobs.sort((a, b) => {
-              const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
-              const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
-              return dateB - dateA; // ترتيب تنازلي
-            });
-            
-            console.log('✅ Maintenance jobs loaded (fallback method):', filteredJobs.length);
-            return filteredJobs;
-          }
-          throw indexError;
-        }
-      } else {
-        // استعلام عادي بدون فهرس معقد
-        // ملاحظة: لا نستخدم repId في Firebase query لأن البحث يجب أن يشمل parts[]
-        if (filters.status) {
-          q = query(q, where('status', '==', filters.status));
-        }
-        
-        if (filters.techId) {
-          q = query(q, where('techId', '==', filters.techId));
-        }
-        
-        if (filters.dateFrom) {
-          q = query(q, where('visitDate', '>=', filters.dateFrom));
-        }
-        
-        if (filters.dateTo) {
-          q = query(q, where('visitDate', '<=', filters.dateTo));
-        }
-
-        const querySnapshot = await getDocs(q);
-        let jobs = [];
-        querySnapshot.forEach(doc => {
-          jobs.push({ id: doc.id, ...doc.data() });
+      // جلب واحد للمجموعة (من الكاش إن وجد) ثم فلترة محلية —
+      // بدلاً من استعلام Firestore جديد عند كل تغيير فلتر (توفير كبير في القراءات)
+      let allJobs = _cacheGet('maintenanceJobs');
+      if (!allJobs) {
+        const snapshot = await getDocs(collection(this.db, 'maintenanceJobs'));
+        allJobs = [];
+        snapshot.forEach(doc => {
+          allJobs.push({ id: doc.id, ...doc.data() });
         });
-        
-        // فلترة المندوب يدوياً (للبحث في parts[] أيضاً)
-        if (filters.repId) {
-          jobs = jobs.filter(job => {
-            if (job.repId === filters.repId) return true;
-            if (job.parts && Array.isArray(job.parts)) {
-              return job.parts.some(part => part.repId === filters.repId);
-            }
-            return false;
-          });
-        }
-        
-        // ترتيب النتائج يدوياً دائماً
-        jobs.sort((a, b) => {
-          const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
-          const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
-          return dateB - dateA; // ترتيب تنازلي
-        });
-        
-        console.log('✅ Maintenance jobs loaded:', jobs.length);
-        return jobs;
+        console.log('📡 Fetched maintenanceJobs from Firestore:', allJobs.length);
+        _cacheSet('maintenanceJobs', allJobs);
       }
+
+      let filteredJobs = allJobs;
+
+      if (filters.status) {
+        filteredJobs = filteredJobs.filter(job => job.status === filters.status);
+      }
+
+      if (filters.techId) {
+        filteredJobs = filteredJobs.filter(job => job.techId === filters.techId);
+      }
+
+      if (filters.dateFrom) {
+        const dateFrom = filters.dateFrom instanceof Date ? filters.dateFrom : new Date(filters.dateFrom);
+        filteredJobs = filteredJobs.filter(job => {
+          const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
+          return jobDate >= dateFrom;
+        });
+      }
+
+      if (filters.dateTo) {
+        const dateTo = filters.dateTo instanceof Date ? filters.dateTo : new Date(filters.dateTo);
+        filteredJobs = filteredJobs.filter(job => {
+          const jobDate = job.visitDate?.seconds ? new Date(job.visitDate.seconds * 1000) : new Date(job.visitDate);
+          return jobDate <= dateTo;
+        });
+      }
+
+      if (filters.repId) {
+        filteredJobs = filteredJobs.filter(job => {
+          // البحث في الهيكل القديم (repId)
+          if (job.repId === filters.repId) return true;
+          // البحث في الهيكل الجديد (parts[].repId)
+          if (job.parts && Array.isArray(job.parts)) {
+            return job.parts.some(part => part.repId === filters.repId);
+          }
+          return false;
+        });
+      }
+
+      // ترتيب النتائج يدوياً دائماً
+      filteredJobs = filteredJobs.slice().sort((a, b) => {
+        const dateA = a.visitDate?.seconds ? new Date(a.visitDate.seconds * 1000) : new Date(a.visitDate);
+        const dateB = b.visitDate?.seconds ? new Date(b.visitDate.seconds * 1000) : new Date(b.visitDate);
+        return dateB - dateA; // ترتيب تنازلي
+      });
+
+      console.log('✅ Maintenance jobs loaded:', filteredJobs.length);
+      return filteredJobs;
     } catch (error) {
       console.error('❌ Error getting maintenance jobs:', error);
       throw error;
@@ -870,6 +865,7 @@ class FirebaseDatabase {
         ...jobData,
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('maintenanceJobs');
       console.log('✅ Maintenance job updated:', jobId);
     } catch (error) {
       console.error('❌ Error updating maintenance job:', error);
@@ -896,6 +892,7 @@ class FirebaseDatabase {
     try {
       const jobRef = doc(this.db, 'maintenanceJobs', jobId);
       await deleteDoc(jobRef);
+      _cacheInvalidate('maintenanceJobs');
       console.log('✅ Maintenance job deleted:', jobId);
     } catch (error) {
       console.error('❌ Error deleting maintenance job:', error);
@@ -912,6 +909,7 @@ class FirebaseDatabase {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('settlements');
       console.log('✅ Settlement created with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -922,22 +920,25 @@ class FirebaseDatabase {
 
   async getSettlements(filters = {}) {
     try {
-      let query = collection(this.db, 'settlements');
-      
-      if (filters.type) {
-        query = query(query, where('type', '==', filters.type));
-      }
-      
-      if (filters.status) {
-        query = query(query, where('status', '==', filters.status));
+      // جلب واحد للمجموعة (من الكاش إن وجد) ثم فلترة محلية
+      let settlements = _cacheGet('settlements');
+      if (!settlements) {
+        const querySnapshot = await getDocs(collection(this.db, 'settlements'));
+        settlements = [];
+        querySnapshot.forEach(doc => {
+          settlements.push({ id: doc.id, ...doc.data() });
+        });
+        _cacheSet('settlements', settlements);
       }
 
-      const querySnapshot = await getDocs(query);
-      const settlements = [];
-      querySnapshot.forEach(doc => {
-        settlements.push({ id: doc.id, ...doc.data() });
-      });
-      
+      if (filters.type) {
+        settlements = settlements.filter(s => s.type === filters.type);
+      }
+
+      if (filters.status) {
+        settlements = settlements.filter(s => s.status === filters.status);
+      }
+
       console.log('✅ Settlements loaded:', settlements.length);
       return settlements;
     } catch (error) {
@@ -955,6 +956,7 @@ class FirebaseDatabase {
         notes,
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('settlements');
       console.log('✅ Settlement marked as paid:', settlementId);
     } catch (error) {
       console.error('❌ Error marking settlement as paid:', error);
@@ -995,6 +997,7 @@ class FirebaseDatabase {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('payments');
       console.log('✅ Payment added with ID:', docRef.id);
       return docRef.id;
     } catch (error) {
@@ -1005,32 +1008,39 @@ class FirebaseDatabase {
 
   async getPayments(filters = {}) {
     try {
-      let q = collection(this.db, 'payments');
-      
-      if (filters.dateFrom) {
-        q = query(q, where('paymentDate', '>=', filters.dateFrom));
+      // جلب واحد للمجموعة (من الكاش إن وجد) ثم فلترة وترتيب محلياً
+      let payments = _cacheGet('payments');
+      if (!payments) {
+        const querySnapshot = await getDocs(collection(this.db, 'payments'));
+        payments = [];
+        querySnapshot.forEach(doc => {
+          payments.push({ id: doc.id, ...doc.data() });
+        });
+        _cacheSet('payments', payments);
       }
-      
-      if (filters.dateTo) {
-        q = query(q, where('paymentDate', '<=', filters.dateTo));
-      }
-      
-      if (filters.entityType) {
-        q = query(q, where('entityType', '==', filters.entityType));
-      }
-      
-      if (filters.entityId) {
-        q = query(q, where('entityId', '==', filters.entityId));
-      }
-      
-      q = query(q, orderBy('paymentDate', 'desc'));
 
-      const querySnapshot = await getDocs(q);
-      const payments = [];
-      querySnapshot.forEach(doc => {
-        payments.push({ id: doc.id, ...doc.data() });
-      });
-      
+      const toDate = (v) => (v?.seconds ? new Date(v.seconds * 1000) : new Date(v));
+
+      if (filters.dateFrom) {
+        const dateFrom = filters.dateFrom instanceof Date ? filters.dateFrom : new Date(filters.dateFrom);
+        payments = payments.filter(p => toDate(p.paymentDate) >= dateFrom);
+      }
+
+      if (filters.dateTo) {
+        const dateTo = filters.dateTo instanceof Date ? filters.dateTo : new Date(filters.dateTo);
+        payments = payments.filter(p => toDate(p.paymentDate) <= dateTo);
+      }
+
+      if (filters.entityType) {
+        payments = payments.filter(p => p.entityType === filters.entityType);
+      }
+
+      if (filters.entityId) {
+        payments = payments.filter(p => p.entityId === filters.entityId);
+      }
+
+      payments.sort((a, b) => toDate(b.paymentDate) - toDate(a.paymentDate));
+
       console.log('✅ Payments loaded:', payments.length);
       return payments;
     } catch (error) {
@@ -1046,6 +1056,7 @@ class FirebaseDatabase {
         ...paymentData,
         updatedAt: serverTimestamp()
       });
+      _cacheInvalidate('payments');
       console.log('✅ Payment updated:', paymentId);
     } catch (error) {
       console.error('❌ Error updating payment:', error);
@@ -1057,6 +1068,7 @@ class FirebaseDatabase {
     try {
       const paymentRef = doc(this.db, 'payments', paymentId);
       await deleteDoc(paymentRef);
+      _cacheInvalidate('payments');
       console.log('✅ Payment deleted:', paymentId);
     } catch (error) {
       console.error('❌ Error deleting payment:', error);
@@ -1310,11 +1322,15 @@ class FirebaseDatabase {
 // إنشاء instance واحد للاستخدام في جميع أنحاء التطبيق
 window.firebaseDatabase = new FirebaseDatabase();
 
-// تهيئة البيانات الافتراضية عند تحميل Firebase
-window.firebaseDatabase.initializeDefaultData()
-  .then(() => {
-    console.log('🔥 Firebase Database Manager initialized successfully!');
-  })
-  .catch(error => {
-    console.error('❌ Error initializing Firebase Database:', error);
-  });
+// تهيئة البيانات الافتراضية مرة واحدة لكل جلسة فقط
+// (كانت تُنفّذ عند تحميل كل صفحة وتقرأ مجموعة الفئات كاملة في كل مرة)
+if (!sessionStorage.getItem('fsDefaultDataInitialized')) {
+  window.firebaseDatabase.initializeDefaultData()
+    .then(() => {
+      sessionStorage.setItem('fsDefaultDataInitialized', '1');
+      console.log('🔥 Firebase Database Manager initialized successfully!');
+    })
+    .catch(error => {
+      console.error('❌ Error initializing Firebase Database:', error);
+    });
+}
